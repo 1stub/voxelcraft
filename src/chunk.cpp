@@ -4,6 +4,9 @@ Chunk::Chunk(){
 }
 
 void Chunk::initChunk(Shader &s){
+  glGenTextures(1, &texture);
+  glBindTexture(GL_TEXTURE_2D, texture);
+  
   glGenVertexArrays(1, &VAO);
   glGenBuffers(1, &VBO);
   
@@ -11,8 +14,6 @@ void Chunk::initChunk(Shader &s){
 
   glBindBuffer(GL_ARRAY_BUFFER, VBO);
   glBufferData(GL_ARRAY_BUFFER, sizeof(block.vertices), block.vertices, GL_STATIC_DRAW);
-
-
 
   //position attrib
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
@@ -27,8 +28,6 @@ void Chunk::initChunk(Shader &s){
 }
 
 void Chunk::textureBlocks(){
-  glGenTextures(1, &texture);
-  glBindTexture(GL_TEXTURE_2D, texture);
   // set the texture wrapping/filtering options (on the currently bound texture object)
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
