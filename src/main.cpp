@@ -1,9 +1,9 @@
 #include <iostream>
+#include <filesystem>
 #include <cmath>
 #include <string>
 #include <map>
 
-#include "shader.h"
 #include "chunk.h"
 
 #include <ft2build.h>
@@ -11,9 +11,23 @@
 
 //  g++ -o prog main.cpp glad.c -lGL -lglfw
 
+const char *textVertexShader = R"(
+#version 330 core
+layout (location = 0) in vec4 vertex; // <vec2 pos, vec2 tex>
+out vec2 TexCoords;
+
+uniform mat4 projection;
+
+void main()
+{
+    gl_Position = projection * vec4(vertex.xy, 0.0, 1.0);
+    TexCoords = vertex.zw;
+})";
+
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow *window);
 void mouse_callback(GLFWwindow *window, double xpos, double ypos);
+void RenderText(Shader &shader, std::string text, float x, float y, float scale, glm::vec3 color);
 
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 800;
@@ -42,6 +56,8 @@ std::map<char, Character> Characters;
 
 Block block;
 Chunk chunk;
+
+unsigned int t_VAO, t_VBO;
 
 int main(){
   glfwInit();
@@ -79,8 +95,8 @@ int main(){
   double timeDiff;
   unsigned int counter = 0;
 
-  chunk.initChunk();
-
+  chunk.initChunk(shader);
+  
   while(!glfwWindowShouldClose(window)){
     crntTime = glfwGetTime();
     timeDiff = crntTime - prevTime;
@@ -96,7 +112,7 @@ int main(){
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
  
     //rendering commands here
-    glUseProgram(shader.ID); 
+    shader.use();
 
     float timeVal = glfwGetTime();
     float greenVal = sin(timeVal) / 2.0f + 0.5f;
@@ -110,7 +126,7 @@ int main(){
     view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
 
     glm::mat4 projection;
-    projection = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f);
+    projection = glm::perspective(glm::radians(45.0f), (float)SCR_HEIGHT/SCR_WIDTH, 0.1f, 100.0f);
 
     int modelLoc = glGetUniformLocation(shader.ID, "model");
     glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
@@ -123,6 +139,8 @@ int main(){
  
     //glBindVertexArray(0); 
     chunk.drawChunk();
+    
+    //RenderText(s, "This is sample text", 25.0f, 25.0f, 1.0f, glm::vec3(0.5, 0.8f, 0.2f));
 
     glfwSwapBuffers(window);
     glfwPollEvents();
@@ -182,4 +200,48 @@ void mouse_callback(GLFWwindow *window, double xpos, double ypos){
     cameraFront = glm::normalize(direction);    
 }
 
+void RenderText(Shader &shader, std::string text, float x, float y, float scale, glm::vec3 color)
+{
+    // activate corresponding render state	
+    shader.use();
+    glUniform3f(glGetUniformLocation(shader.ID, "textColor"), color.x, color.y, color.z);
+    glActiveTexture(GL_TEXTURE0);
+    glBindVertexArray(t_VAO);
+
+    // iterate through all characters
+    std::string::const_iterator c;
+    for (c = text.begin(); c != text.end(); c++) 
+    {
+        Character ch = Characters[*c];
+
+        float xpos = x + ch.Bearing.x * scale;
+        float ypos = y - (ch.Size.y - ch.Bearing.y) * scale;
+
+        float w = ch.Size.x * scale;
+        float h = ch.Size.y * scale;
+        // update VBO for each character
+        float vertices[6][4] = {
+            { xpos,     ypos + h,   0.0f, 0.0f },            
+            { xpos,     ypos,       0.0f, 1.0f },
+            { xpos + w, ypos,       1.0f, 1.0f },
+
+            { xpos,     ypos + h,   0.0f, 0.0f },
+            { xpos + w, ypos,       1.0f, 1.0f },
+            { xpos + w, ypos + h,   1.0f, 0.0f }           
+        };
+        // render glyph texture over quad
+        glBindTexture(GL_TEXTURE_2D, ch.TextureID);
+        // update content of VBO memory
+        glBindBuffer(GL_ARRAY_BUFFER, t_VBO);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices); // be sure to use glBufferSubData and not glBufferData
+
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        // render quad
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+        // now advance cursors for next glyph (note that advance is number of 1/64 pixels)
+        x += (ch.Advance >> 6) * scale; // bitshift by 6 to get value in pixels (2^6 = 64 (divide amount of 1/64th pixels by 64 to get amount of pixels))
+    }
+    glBindVertexArray(0);
+    glBindTexture(GL_TEXTURE_2D, 0);
+}
 
