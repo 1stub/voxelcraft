@@ -1,9 +1,18 @@
 #include "chunk.h"
 
 Chunk::Chunk(){
+  initChunk();
+  //set blocks
+  for(int x = 0; x < chunkSize; x++){
+    for(int y = 0; y < chunkSize; y++){
+      Block b(x, y, 0.0f);
+      updateVertices(b);
+      blocks.push_back(b);
+    }
+  }
 }
 
-void Chunk::initChunk(Shader &s){
+void Chunk::initChunk(){
   glGenTextures(1, &texture);
   glBindTexture(GL_TEXTURE_2D, texture);
   
@@ -11,10 +20,7 @@ void Chunk::initChunk(Shader &s){
   glGenBuffers(1, &VBO);
   
   glBindVertexArray(VAO);
-
-  glBindBuffer(GL_ARRAY_BUFFER, VBO);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(block.vertices), block.vertices, GL_STATIC_DRAW);
-
+  
   //position attrib
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
   glEnableVertexAttribArray(0);
@@ -25,6 +31,12 @@ void Chunk::initChunk(Shader &s){
 
   textureBlocks();
   //s.setInt("texture", 1);
+}
+
+//we need to update our vbo with new vertex data
+void Chunk::updateVertices(Block &b){
+  glBindBuffer(GL_ARRAY_BUFFER, VBO);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(b.vertices), b.vertices, GL_STATIC_DRAW);
 }
 
 void Chunk::textureBlocks(){

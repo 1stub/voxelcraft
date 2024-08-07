@@ -16,8 +16,8 @@ void processInput(GLFWwindow *window);
 void mouse_callback(GLFWwindow *window, double xpos, double ypos);
 void RenderText(Shader &shader, std::string text, float x, float y, float scale, glm::vec3 color);
 
-const unsigned int SCR_WIDTH = 800;
-const unsigned int SCR_HEIGHT = 800;
+const unsigned int SCR_WIDTH = 1600;
+const unsigned int SCR_HEIGHT = 900;
 
 //camera setup
 glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 0.3f);
@@ -41,9 +41,6 @@ struct Character {
 
 std::map<char, Character> Characters;
 
-Block block;
-Chunk chunk;
-
 unsigned int t_VAO, t_VBO;
 
 int main(){
@@ -53,7 +50,7 @@ int main(){
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
   //glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
   
-  GLFWwindow *window = glfwCreateWindow(SCR_HEIGHT, SCR_WIDTH, "OpenGL Test", NULL, NULL);
+  GLFWwindow *window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "OpenGL Test", NULL, NULL);
   if (window == NULL)
   {
     std::cout << "Failed to create GLFW window" << std::endl;
@@ -62,6 +59,7 @@ int main(){
   }
   glfwMakeContextCurrent(window);
   glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+  glfwSwapInterval(1); //enables vsync, 0 = locked at 60
 
   glfwSetCursorPosCallback(window, mouse_callback);
 
@@ -78,13 +76,6 @@ int main(){
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  
   glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED); //keeps mouse in game
-  
-  double prevTime = 0.0;
-  double crntTime = 0.0;
-  double timeDiff;
-  unsigned int counter = 0;
-
-  chunk.initChunk(shader);
 
   Shader s("../shaders/text.vs", "../shaders/text.fs");
   glm::mat4 projection = glm::ortho(0.0f, static_cast<float>(SCR_WIDTH), 0.0f, static_cast<float>(SCR_HEIGHT));
@@ -166,23 +157,29 @@ int main(){
     FT_Done_FreeType(ft);
 
 
-    // configure VAO/VBO for texture quads
-    // -----------------------------------
-    glGenVertexArrays(1, &t_VAO);
-    glGenBuffers(1, &t_VBO);
-    glBindVertexArray(t_VAO);
-    glBindBuffer(GL_ARRAY_BUFFER, t_VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6 * 4, NULL, GL_DYNAMIC_DRAW);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);  
+  // configure VAO/VBO for texture quads
+  // -----------------------------------
+  glGenVertexArrays(1, &t_VAO);
+  glGenBuffers(1, &t_VBO);
+  glBindVertexArray(t_VAO);
+  glBindBuffer(GL_ARRAY_BUFFER, t_VBO);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6 * 4, NULL, GL_DYNAMIC_DRAW);
+  glEnableVertexAttribArray(0);
+  glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
+  glBindVertexArray(0);  
 
+  double prevTime = 0.0;
+  double crntTime = 0.0;
+  double timeDiff;
+  unsigned int counter = 0;
+  std::string FPS;
+ 
+  Chunk chunk;
   while(!glfwWindowShouldClose(window)){
     crntTime = glfwGetTime();
     timeDiff = crntTime - prevTime;
     counter++;
-    std::string FPS;
     if(timeDiff >= 1.0 / 30.0){
       FPS = std::to_string((1.0 / timeDiff) * counter);
     }
@@ -203,7 +200,7 @@ int main(){
     view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
 
     glm::mat4 projection;
-    projection = glm::perspective(glm::radians(45.0f), (float)SCR_HEIGHT/SCR_WIDTH, 0.1f, 100.0f);
+    projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH/SCR_HEIGHT, 0.1f, 100.0f);
 
     int modelLoc = glGetUniformLocation(shader.ID, "model");
     glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));

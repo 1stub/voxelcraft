@@ -1,34 +1,12 @@
-#include <iostream>
-#include <vector>
-
-#include "block.h"
-#include "shader.h"
-
-#include "../resources/stb_image.h"
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
-#include <GL/glut.h>
-
-
-class Chunk{
+class Block{
   public:
-    Chunk();
-    void initChunk();
-    void updateVertices(Block &b);
-    void drawChunk();
-    void textureBlocks();
-  private:
-    unsigned int VBO, VAO, EBO;
-    std::vector<Block> blocks;
-    
-    unsigned int texture;
-    int chunkSize = 16;
-    int chunkDepth = 64;
-
-    //for testing
+    Block(float xPos, float yPos, float zPos) : x(xPos), y(yPos), z(zPos){
+      for(int i = 0; i < 36; i++){
+        vertices[i][0] = x;
+        vertices[i][1] = y;
+        vertices[i][2] = z;
+      }
+    }
     float vertices[36][5]{
       //Pos                 //tex
       -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
@@ -73,5 +51,10 @@ class Chunk{
       -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
       -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
     };
+  private:
 
+    float x;
+    float y;
+    float z;
 };
+
