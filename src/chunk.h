@@ -12,12 +12,13 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <GL/glut.h>
 
-
+class Block;
 class Chunk{
+  friend Block;
   public:
     Chunk();
     void initChunk();
-    void updateVertices(Block &b);
+    void updateVertices();
     void drawChunk();
     void textureBlocks();
   private:
