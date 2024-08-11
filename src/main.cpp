@@ -211,11 +211,10 @@ int main(){
     int projLoc = glGetUniformLocation(shader.ID, "projection");
     glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
  
-    //glBindVertexArray(0); 
     chunk.drawChunk();
   
     glDisable(GL_DEPTH_TEST);
-    RenderText(s, FPS,740.0f, 770.0f, 0.5f, glm::vec3(0.3, 0.7f, 0.9f));
+    RenderText(s, FPS,1540.0f, 870.0f, 0.5f, glm::vec3(0.3, 0.7f, 0.9f));
     glEnable(GL_DEPTH_TEST);
     glfwSwapBuffers(window);
     glfwPollEvents();

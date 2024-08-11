@@ -3,13 +3,13 @@
 Chunk::Chunk(){
   initChunk();
   //set blocks
-  for(int x = 0; x < chunkSize; x++){
-    for(int y = 0; y < chunkSize; y++){
-      Block b(x, y, 0.0f);
+  //for(int x = 0; x < chunkSize; x++){
+    //for(int y = 0; y < chunkSize; y++){
+      Block b(1.0f, 1.0f, 0.0f);
       updateVertices(b);
-      blocks.push_back(b);
-    }
-  }
+      //blocks.push_back(b);
+    //}
+  //}
 }
 
 void Chunk::initChunk(){
@@ -19,7 +19,10 @@ void Chunk::initChunk(){
   glGenVertexArrays(1, &VAO);
   glGenBuffers(1, &VBO);
   
-  glBindVertexArray(VAO);
+  glBindVertexArray(VAO);  
+  
+  glBindBuffer(GL_ARRAY_BUFFER, VBO);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 36 * 5, nullptr, GL_DYNAMIC_DRAW);
   
   //position attrib
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
@@ -28,15 +31,12 @@ void Chunk::initChunk(){
   // texture attribute
   glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3* sizeof(float))); //we have to offset by 3*sizeof(float);
   glEnableVertexAttribArray(1);
-
-  textureBlocks();
-  //s.setInt("texture", 1);
 }
 
 //we need to update our vbo with new vertex data
 void Chunk::updateVertices(Block &b){
-  glBindBuffer(GL_ARRAY_BUFFER, VBO);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(b.vertices), b.vertices, GL_STATIC_DRAW);
+  glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(b.vertices), b.vertices);
+  textureBlocks();
 }
 
 void Chunk::textureBlocks(){
@@ -64,4 +64,5 @@ void Chunk::drawChunk(){
   glBindTexture(GL_TEXTURE_2D, texture);
   glBindVertexArray(VAO);
   glDrawArrays(GL_TRIANGLES, 0, 36);
+  glBindVertexArray(0);
 }
