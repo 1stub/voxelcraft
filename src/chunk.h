@@ -1,14 +1,16 @@
+#ifndef CHUNK_H
+#define CHUNK_H
+
 #include <iostream>
 #include <vector>
 
+#include "camera.h"
 #include "block.h"
 #include "shader.h"
 
 #include "../resources/stb_image.h"
-#include <glad/glad.h>
+
 #include <GLFW/glfw3.h>
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <GL/glut.h>
 
@@ -22,7 +24,7 @@ class Chunk{
     void drawChunk();
     void textureBlocks();
   private:
-    unsigned int VBO, VAO, EBO;
+    unsigned int VBO, VAO;
     std::vector<Block> blocks;
     
     unsigned int texture;
@@ -76,3 +78,5 @@ class Chunk{
     };
 
 };
+
+#endif

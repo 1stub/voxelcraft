@@ -3,7 +3,8 @@ class Block{
     Block(float xPos, float yPos, float zPos) : x(xPos), y(yPos), z(zPos){
       for(int i = 0; i < 36; i++){
         vertices[i][0] += xPos;
-        vertices[i][2] += yPos;
+        vertices[i][1] += yPos;
+        vertices[i][2] += zPos;
       }
     }
     float vertices[36][5]{
@@ -52,7 +53,6 @@ class Block{
     };
   
   private:
-
     float x;
     float y;
     float z;

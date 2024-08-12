@@ -3,9 +3,11 @@
 Chunk::Chunk(){
   //set blocks
   for(int x = 0; x < chunkSize; x++){
-    for(int y = 0; y < chunkSize; y++){
-      Block b(static_cast<float>(x), static_cast<float>(y), 0.0f);
-      blocks.push_back(b);
+    for(int z = 0; z < chunkSize; z++){
+        for(int y = 0; y < chunkDepth; y++){ 
+        Block b(static_cast<float>(x), static_cast<float>(y), static_cast<float>(z));
+        blocks.push_back(b);
+      }
     }
   }
   initChunk();

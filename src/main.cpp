@@ -1,6 +1,6 @@
-#include <iostream>
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
 #include <filesystem>
-#include <cmath>
 #include <string>
 #include <map>
 
@@ -11,26 +11,13 @@
 
 //  g++ -o prog main.cpp glad.c -lGL -lglfw
 
+void MouseCallback(GLFWwindow *window, double xpos, double ypos);
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
-void processInput(GLFWwindow *window);
-void mouse_callback(GLFWwindow *window, double xpos, double ypos);
+void processInput(GLFWwindow *window, float deltaTime);
 void RenderText(Shader &shader, std::string text, float x, float y, float scale, glm::vec3 color);
 
 const unsigned int SCR_WIDTH = 1600;
 const unsigned int SCR_HEIGHT = 900;
-
-//camera setup
-glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 0.3f);
-glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
-glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
-float yaw  = -90.0f;
-float pitch = 0.0f;
-float fov = 45.0f;
-
-//mouse setup
-bool firstMouse = true;
-float lastX = SCR_WIDTH / 2.0f;
-float lastY = SCR_HEIGHT / 2.0f;
 
 struct Character {
     unsigned int TextureID;  // ID handle of the glyph texture
@@ -42,6 +29,8 @@ struct Character {
 std::map<char, Character> Characters;
 
 unsigned int t_VAO, t_VBO;
+
+Camera camera;
 
 int main(){
   glfwInit();
@@ -61,7 +50,7 @@ int main(){
   glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
   glfwSwapInterval(1); //enables vsync, 0 = locked at 60
 
-  glfwSetCursorPosCallback(window, mouse_callback);
+  glfwSetCursorPosCallback(window, MouseCallback);
 
   if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
   {
@@ -184,20 +173,19 @@ int main(){
       FPS = std::to_string((1.0 / timeDiff) * counter);
     }
 
-    processInput(window);
+    processInput(window, static_cast<float>(crntTime));
 
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
  
     //rendering commands here
     shader.use();
-    //s.use();
 
     glm::mat4 model = glm::mat4(1.0f);
     model = glm::rotate(model, glm::radians(0.0f), glm::vec3(0.5f, 1.0f, 0.0f)); 
 
     glm::mat4 view;
-    view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
+    view = camera.GetViewMatrix();
 
     glm::mat4 projection;
     projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH/SCR_HEIGHT, 0.1f, 100.0f);
@@ -223,55 +211,35 @@ int main(){
   return 0;
 }
 
-void processInput(GLFWwindow *window){
+void processInput(GLFWwindow *window, float deltaTime){
   if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS){
     glfwSetWindowShouldClose(window, true);
   }
-  const float cameraSpeed = 0.05f; // adjust accordingly
+
   if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-      cameraPos += cameraSpeed * cameraFront;
+      camera.ProcessKeyboard(FORWARD, deltaTime);
   if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-      cameraPos -= cameraSpeed * cameraFront;
+      camera.ProcessKeyboard(BACKWARD, deltaTime);
   if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-      cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+      camera.ProcessKeyboard(LEFT, deltaTime);
   if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-      cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+      camera.ProcessKeyboard(RIGHT, deltaTime);
+}
+
+void MouseCallback(GLFWwindow *window, double xpos, double ypos) {
+    static float lastX = SCR_WIDTH / 2.0f;
+    static float lastY = SCR_HEIGHT / 2.0f;
+    float xoffset = xpos - lastX;
+    float yoffset = lastY - ypos;  // Reversed since y-coordinates go from bottom to top
+
+    lastX = xpos;
+    lastY = ypos;
+
+    camera.ProcessMouseMovement(xoffset, yoffset);
 }
 
 void framebuffer_size_callback(GLFWwindow *window, int width, int height){
   glViewport(0,0, width, height);
-}
-
-void mouse_callback(GLFWwindow *window, double xpos, double ypos){
-    if (firstMouse)
-    {
-        lastX = xpos;
-        lastY = ypos;
-        firstMouse = false;
-    }
-  
-    float xoffset = xpos - lastX;
-    float yoffset = lastY - ypos; 
-    lastX = xpos;
-    lastY = ypos;
-
-    float sensitivity = 0.1f;
-    xoffset *= sensitivity;
-    yoffset *= sensitivity;
-
-    yaw   += xoffset;
-    pitch += yoffset;
-
-    if(pitch > 89.0f)
-        pitch = 89.0f;
-    if(pitch < -89.0f)
-        pitch = -89.0f;
-
-    glm::vec3 direction;
-    direction.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
-    direction.y = sin(glm::radians(pitch));
-    direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
-    cameraFront = glm::normalize(direction);    
 }
 
 void RenderText(Shader &shader, std::string text, float x, float y, float scale, glm::vec3 color)
