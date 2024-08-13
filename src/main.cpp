@@ -29,6 +29,7 @@ struct Character {
 std::map<char, Character> Characters;
 
 unsigned int t_VAO, t_VBO;
+GLint pMode;
 
 Camera camera;
 
@@ -163,7 +164,7 @@ int main(){
   double timeDiff;
   unsigned int counter = 0;
   std::string FPS;
- 
+
   Chunk chunk;
   while(!glfwWindowShouldClose(window)){
     crntTime = glfwGetTime();
@@ -211,7 +212,10 @@ int main(){
   return 0;
 }
 
+float diff = 0.0f;
+float prevT = 0.0f;
 void processInput(GLFWwindow *window, float deltaTime){
+  glGetIntegerv(GL_POLYGON_MODE, &pMode);
   if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS){
     glfwSetWindowShouldClose(window, true);
   }
@@ -224,6 +228,17 @@ void processInput(GLFWwindow *window, float deltaTime){
       camera.ProcessKeyboard(LEFT, deltaTime);
   if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
       camera.ProcessKeyboard(RIGHT, deltaTime);
+  if(glfwGetKey(window, GLFW_KEY_F)){
+    diff = deltaTime - prevT;
+    if(std::abs(diff) > 0.5){
+      prevT = deltaTime;
+      if(pMode == GL_LINE){
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+      }else{
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+      }
+    }
+  }
 }
 
 void MouseCallback(GLFWwindow *window, double xpos, double ypos) {
