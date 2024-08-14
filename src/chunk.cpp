@@ -2,11 +2,14 @@
 
 Chunk::Chunk(){
   //set blocks
+  generateVoxelGrid();
   for(int x = 0; x < chunkSize; x++){
     for(int z = 0; z < chunkSize; z++){
         for(int y = 0; y < chunkSize; y++){ 
         Block b(static_cast<float>(x), static_cast<float>(y), static_cast<float>(z));
-        blocks.push_back(b);
+        if(checkNeighbors(b, x, y, z)){
+          blocks.push_back(b);
+        }
       }
     }
   }
@@ -14,7 +17,17 @@ Chunk::Chunk(){
   updateVertices();
 }
 
+int Chunk::getNumBlocks(){
+  return blocks.size();
+}
+
 void Chunk::initChunk(){
+  int totalSize = 0;
+  for(const auto &b : blocks){
+    totalSize += b.vertices.size();
+  }
+  verticeCount = totalSize;
+
   glGenTextures(1, &texture);
   glBindTexture(GL_TEXTURE_2D, texture);
   
@@ -24,7 +37,7 @@ void Chunk::initChunk(){
   glBindVertexArray(VAO);  
   
   glBindBuffer(GL_ARRAY_BUFFER, VBO);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(Block::vertices) * blocks.size(), nullptr, GL_DYNAMIC_DRAW);
+  glBufferData(GL_ARRAY_BUFFER, totalSize * sizeof(float), nullptr, GL_DYNAMIC_DRAW);
   
   //position attrib
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
@@ -39,9 +52,11 @@ void Chunk::initChunk(){
 
 //we need to update our vbo with new vertex data
 void Chunk::updateVertices(){
-    for(int i = 0; i < blocks.size(); i++){
+  int offset = 0;
+  for(int i = 0; i < blocks.size(); i++){
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferSubData(GL_ARRAY_BUFFER, i * sizeof(Block::vertices), sizeof(blocks[i].vertices), blocks[i].vertices);
+    glBufferSubData(GL_ARRAY_BUFFER, offset, blocks[i].vertices.size() * sizeof(float), &blocks[i].vertices.front());
+    offset += blocks[i].vertices.size() * sizeof(float);
   }
 }
 
@@ -66,9 +81,64 @@ void Chunk::textureBlocks(){
   stbi_image_free(data);
 }
 
+//This creates a bitmap we use to check adjacent blocks
+void Chunk::generateVoxelGrid(){
+  for(int x = 0; x < chunkSize; x++){
+    for(int z = 0; z < chunkSize; z++){
+      for(int y = 0; y < chunkSize; y++){
+        voxelGrid[x][y][z] = 1;
+      }
+    }
+  } 
+}
+
+//This checks to see what faces are visible
+//Will eventually need to use the voxelGrid for this
+bool Chunk::checkNeighbors(Block &b, int x, int y, int z) {
+    bool faceDrawn = false;
+    // Above
+    if (y + 1 >= chunkSize) {
+        b.insertVertices(topFace);
+        faceDrawn = true;
+    }
+
+    // Below
+    if (y - 1 < 0 ) {
+        b.insertVertices(bottomFace);
+        faceDrawn = true;
+    }
+
+    // Right
+    if (x + 1 >= chunkSize ) {
+        b.insertVertices(rightFace);
+        faceDrawn = true;
+    }
+
+    // Left
+    if (x - 1 < 0 ) {
+        b.insertVertices(leftFace);
+        faceDrawn = true;
+    }
+
+    // Front
+    if (z - 1 < 0 ) {
+        b.insertVertices(frontFace);
+        faceDrawn = true;
+    }
+
+    // Behind
+    if (z + 1 >= chunkSize ) {
+        b.insertVertices(backFace);
+        faceDrawn = true;
+    }
+
+    return faceDrawn;
+}
 void Chunk::drawChunk(){
+  glDisable(GL_CULL_FACE);
   glBindTexture(GL_TEXTURE_2D, texture);
   glBindVertexArray(VAO);
-  glDrawArrays(GL_TRIANGLES, 0, blocks.size() * 36);
+  glDrawArrays(GL_TRIANGLES, 0, verticeCount);
   glBindVertexArray(0);
+  glEnable(GL_CULL_FACE);
 }

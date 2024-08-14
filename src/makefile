@@ -13,7 +13,7 @@ TARGET = prog
 
 # Build rule
 $(TARGET): $(SRCS)
-	$(CXX) -o $(TARGET) $(SRCS) $(CXXFLAGS) $(LDFLAGS)
+	$(CXX) -o $(TARGET) -g $(SRCS) $(CXXFLAGS) $(LDFLAGS)
 
 # Clean rule
 clean:

@@ -204,6 +204,7 @@ int main(){
   
     glDisable(GL_DEPTH_TEST);
     RenderText(s, FPS,1540.0f, 870.0f, 0.5f, glm::vec3(0.3, 0.7f, 0.9f));
+    RenderText(s, std::to_string(chunk.getNumBlocks()), 1200.0f, 870.0f, 0.5f, glm::vec3(0.3, 0.7f, 0.9f));
     glEnable(GL_DEPTH_TEST);
     glfwSwapBuffers(window);
     glfwPollEvents();
