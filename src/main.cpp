@@ -62,6 +62,8 @@ int main(){
 
   Font font(SCR_WIDTH, SCR_HEIGHT);
   Chunk chunk;
+
+  //Our main game loop
   while(!glfwWindowShouldClose(window)){
     crntTime = glfwGetTime();
     timeDiff = crntTime - prevTime;

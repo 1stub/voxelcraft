@@ -3,24 +3,34 @@
 
 #include <vector>
 
+enum blockType{
+  Dirt = 0,
+  Grass = 1,
+  Stone = 2,
+  Bedrock = 3,
+};
+
 class Block{
   public:
-    Block(float xPos, float yPos, float zPos) : x(xPos), y(yPos), z(zPos){
+    Block(blockType b_type, float xPos, float yPos, float zPos) : type(b_type), x(xPos), y(yPos), z(zPos){
 
     }
 
-    void insertVertices(std::vector<std::vector<float>> face){
-        for (const auto& vertex : face) {
-            std::vector<float> translatedVertex = vertex;
+    void insertVertices(std::vector<std::vector<float>> face, std::vector<std::vector<float>> tex){
+        for (int i = 0; i < face.size(); i++) {
+            std::vector<float> translatedVertex = face[i];
             translatedVertex[0] += x; // x position
             translatedVertex[1] += y; // y position
             translatedVertex[2] += z; // z position
+            translatedVertex[3] = tex[i][0];
+            translatedVertex[4] = tex[i][1];
             vertices.insert(vertices.end(), translatedVertex.begin(), translatedVertex.end());
         }
     }
     std::vector<float> vertices; 
   
   private:
+    blockType type;
     float x;
     float y;
     float z;

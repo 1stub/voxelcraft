@@ -14,6 +14,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <GL/glut.h>
 
+
 class Block;
 class Chunk{
   friend Block;
@@ -23,6 +24,7 @@ class Chunk{
     void initChunk();
     void updateVertices();
     void textureBlocks();
+    void setBlockTexture();
     bool checkNeighbors(Block &b, int x, int y, int z);
     void generateVoxelGrid();
     void drawChunk();
@@ -33,6 +35,15 @@ class Chunk{
     std::vector<Block> blocks; 
     unsigned int texture;
     float verticeCount = 0;
+
+    std::vector<std::vector<float>> dirtTexCoords = {
+    };
+
+    std::vector<std::vector<float>> grassSideTexCoords = {
+    };
+
+    std::vector<std::vector<float>> grassTopTexCoords = {
+    };
 
     std::vector<std::vector<float>> frontFace = {
         {-0.5f, -0.5f, -0.5f, 0.0f, 0.0f},
