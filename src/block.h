@@ -4,10 +4,10 @@
 #include <vector>
 
 enum blockType{
-  Dirt = 0,
-  Grass = 1,
-  Stone = 2,
-  Bedrock = 3,
+  Grass = 0,
+  GassTop = 1,
+  Dirt = 2,
+  Stone = 3,
 };
 
 class Block{
@@ -27,6 +27,11 @@ class Block{
             vertices.insert(vertices.end(), translatedVertex.begin(), translatedVertex.end());
         }
     }
+
+    int getBlockId(){
+      return type;
+    }
+
     std::vector<float> vertices; 
   
   private:

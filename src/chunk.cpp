@@ -6,11 +6,11 @@ Chunk::Chunk(){
   setBlockTexture();
   for(int x = 0; x < chunkSize; x++){
     for(int z = 0; z < chunkSize; z++){
-        for(int y = 0; y < chunkSize; y++){ 
-        Block b(Dirt, static_cast<float>(x), static_cast<float>(y), static_cast<float>(z));
-        if(checkNeighbors(b, x, y, z)){
-          blocks.push_back(b);
-        }
+        for(int y = 0; y < chunkSize; y++){
+          Block b(Dirt, static_cast<float>(x), static_cast<float>(y), static_cast<float>(z));
+          if(checkNeighbors(b, x, y, z)){
+            blocks.push_back(b);
+          }
       }
     }
   }
@@ -46,9 +46,6 @@ void Chunk::initChunk(){
   // texture attribute
   glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3* sizeof(float))); //we have to offset by 3*sizeof(float);
   glEnableVertexAttribArray(1);
-
-  //make this call once, textures get created based on the coords associated with the block
-  textureBlocks();
 }
 
 //we need to update our vbo with new vertex data
@@ -85,19 +82,21 @@ void Chunk::textureBlocks() {
 }
 
 void Chunk::setBlockTexture(){
-  constexpr float x = 2, y = 0;
+  constexpr float y = 0;
   constexpr float sheetWidth = 64.0f;
   constexpr float sheetHeight = 64.0f;
   constexpr float spriteWidth = 16.0f , spriteHeight = 16.0f;
-
-  dirtTexCoords = {
-    { (x * spriteWidth) / sheetWidth, (y * spriteHeight) / sheetHeight}, //topleft
-    { ((x + 1) * spriteWidth) / sheetWidth, (y * spriteHeight) / sheetHeight}, //top right
-    { ((x + 1) * spriteWidth) / sheetWidth, ((y + 1) * spriteHeight) / sheetHeight}, //bottomright
-    { ((x + 1) * spriteWidth) / sheetWidth, ((y + 1) * spriteHeight) / sheetHeight}, //bottom right
-    { (x * (spriteWidth)) / sheetWidth, ((y + 1) * spriteHeight) / sheetHeight}, //bottom left
-    { (x * spriteWidth) / sheetWidth, (y * spriteHeight) / sheetHeight} //topleft
-  };
+  
+  for(float x = 0; x < 4; x++){
+    blockTextures[static_cast<int>(x)] = {
+      { (x * spriteWidth) / sheetWidth, (y * spriteHeight) / sheetHeight}, //topleft
+      { ((x + 1) * spriteWidth) / sheetWidth, (y * spriteHeight) / sheetHeight}, //top right
+      { ((x + 1) * spriteWidth) / sheetWidth, ((y + 1) * spriteHeight) / sheetHeight}, //bottomright
+      { ((x + 1) * spriteWidth) / sheetWidth, ((y + 1) * spriteHeight) / sheetHeight}, //bottom right
+      { (x * (spriteWidth)) / sheetWidth, ((y + 1) * spriteHeight) / sheetHeight}, //bottom left
+      { (x * spriteWidth) / sheetWidth, (y * spriteHeight) / sheetHeight} //topleft
+    };
+  }
 }
 
 //we need to update our vbo with new vertex data
@@ -108,6 +107,9 @@ void Chunk::updateVertices(){
     glBufferSubData(GL_ARRAY_BUFFER, offset, blocks[i].vertices.size() * sizeof(float), &blocks[i].vertices.front());
     offset += blocks[i].vertices.size() * sizeof(float);
   }
+
+  //make this call once, textures get created based on the coords associated with the block
+  textureBlocks();
 }
 
 //This creates a bitmap we use to check adjacent blocks
@@ -124,44 +126,45 @@ void Chunk::generateVoxelGrid(){
 //This checks to see what faces are visible
 //Will eventually need to use the voxelGrid for this
 bool Chunk::checkNeighbors(Block &b, int x, int y, int z) {
-    bool faceDrawn = false;
-    // Above
-    if (y + 1 >= chunkSize) {
-        b.insertVertices(topFace, dirtTexCoords);
-        faceDrawn = true;
-    }
+  std::vector<std::vector<float>> b_tex = blockTextures[b.getBlockId()]; 
+  bool faceDrawn = false;
+  // Above
+  if (y + 1 >= chunkSize) {
+      b.insertVertices(topFace, b_tex);
+      faceDrawn = true;
+  }
 
-    // Below
-    if (y - 1 < 0 ) {
-        b.insertVertices(bottomFace, dirtTexCoords);
-        faceDrawn = true;
-    }
+  // Below
+  if (y - 1 < 0 ) {
+      b.insertVertices(bottomFace, b_tex);
+      faceDrawn = true;
+  }
 
-    // Right
-    if (x + 1 >= chunkSize ) {
-        b.insertVertices(rightFace, dirtTexCoords);
-        faceDrawn = true;
-    }
+  // Right
+  if (x + 1 >= chunkSize ) {
+      b.insertVertices(rightFace, b_tex);
+      faceDrawn = true;
+  }
 
-    // Left
-    if (x - 1 < 0 ) {
-        b.insertVertices(leftFace, dirtTexCoords);
-        faceDrawn = true;
-    }
+  // Left
+  if (x - 1 < 0 ) {
+      b.insertVertices(leftFace, b_tex);
+      faceDrawn = true;
+  }
 
-    // Front
-    if (z - 1 < 0 ) {
-        b.insertVertices(frontFace, dirtTexCoords);
-        faceDrawn = true;
-    }
+  // Front
+  if (z - 1 < 0 ) {
+      b.insertVertices(frontFace, b_tex);
+      faceDrawn = true;
+  }
 
-    // Behind
-    if (z + 1 >= chunkSize ) {
-        b.insertVertices(backFace, dirtTexCoords);
-        faceDrawn = true;
-    }
+  // Behind
+  if (z + 1 >= chunkSize ) {
+      b.insertVertices(backFace, b_tex);
+      faceDrawn = true;
+  }
 
-    return faceDrawn;
+  return faceDrawn;
 }
 void Chunk::drawChunk(){
   glDisable(GL_CULL_FACE);

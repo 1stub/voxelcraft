@@ -14,6 +14,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <GL/glut.h>
 
+typedef std::vector<std::vector<float>> blockTexCoords;
 
 class Block;
 class Chunk{
@@ -35,16 +36,8 @@ class Chunk{
     std::vector<Block> blocks; 
     unsigned int texture;
     float verticeCount = 0;
-
-    std::vector<std::vector<float>> dirtTexCoords = {
-    };
-
-    std::vector<std::vector<float>> grassSideTexCoords = {
-    };
-
-    std::vector<std::vector<float>> grassTopTexCoords = {
-    };
-
+    blockTexCoords blockTextures[4];  
+    
     std::vector<std::vector<float>> frontFace = {
         {-0.5f, -0.5f, -0.5f, 0.0f, 0.0f},
         { 0.5f, -0.5f, -0.5f, 1.0f, 0.0f},
