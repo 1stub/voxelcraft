@@ -50,6 +50,9 @@ int main(){
   //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
   glEnable(GL_DEPTH_TEST);
   glEnable(GL_BLEND);
+  glEnable(GL_CULL_FACE);
+  glCullFace(GL_BACK);
+  glFrontFace(GL_CCW);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  
   glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED); //keeps mouse in game
 
@@ -74,7 +77,7 @@ int main(){
 
     processInput(window, static_cast<float>(crntTime));
 
-    glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+    glClearColor(0.4745f, 0.651f, 1.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
  
     //rendering commands here
@@ -101,8 +104,7 @@ int main(){
     chunk.drawChunk();
   
     glDisable(GL_DEPTH_TEST);
-    font.RenderText(FPS,1540.0f, 870.0f, 0.5f, glm::vec3(0.3, 0.7f, 0.9f));
-    font.RenderText(std::to_string(chunk.getNumBlocks()), 1200.0f, 870.0f, 0.5f, glm::vec3(0.3, 0.7f, 0.9f));
+    font.RenderText(FPS,1540.0f, 870.0f, 0.5f, glm::vec3(1.0f, 1.0f, 1.0f));
     glEnable(GL_DEPTH_TEST);
     glfwSwapBuffers(window);
     glfwPollEvents();

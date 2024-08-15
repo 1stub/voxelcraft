@@ -1,4 +1,5 @@
 #include "chunk.h"
+#include "block.h"
 
 Chunk::Chunk(){
   //set blocks
@@ -7,7 +8,14 @@ Chunk::Chunk(){
   for(int x = 0; x < chunkSize; x++){
     for(int z = 0; z < chunkSize; z++){
         for(int y = 0; y < chunkSize; y++){
-          Block b(Dirt, static_cast<float>(x), static_cast<float>(y), static_cast<float>(z));
+          Block b(static_cast<float>(x), static_cast<float>(y), static_cast<float>(z));
+          if(y >= 15){
+            b.setType(Grass);
+          }else if(y < 15 && y > 11){
+            b.setType(Dirt);
+          }else{
+            b.setType(Stone);
+          }
           if(checkNeighbors(b, x, y, z)){
             blocks.push_back(b);
           }
@@ -53,8 +61,8 @@ void Chunk::textureBlocks() {
   glBindTexture(GL_TEXTURE_2D, texture);
   
   // set the texture wrapping/filtering options (on the currently bound texture object)
-  //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	
-  //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
   //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 7); // pick mipmap level 7 or lower
@@ -64,6 +72,7 @@ void Chunk::textureBlocks() {
   unsigned char *data = stbi_load("../img/atlas.png", &width, &height, &nrChannels, 0);
   if (data)
   {
+    //stbi_set_flip_vertically_on_load(1);
     GLenum format;
     if (nrChannels == 1)
         format = GL_RED;
@@ -126,41 +135,47 @@ void Chunk::generateVoxelGrid(){
 //This checks to see what faces are visible
 //Will eventually need to use the voxelGrid for this
 bool Chunk::checkNeighbors(Block &b, int x, int y, int z) {
-  std::vector<std::vector<float>> b_tex = blockTextures[b.getBlockId()]; 
+  blockTexCoords b_texSides = blockTextures[b.getBlockId()];
+  blockTexCoords b_texTop = blockTextures[b.getBlockId()];
+  blockTexCoords b_texBottom = blockTextures[b.getBlockId()];
+  if(b.getBlockId() == Grass){
+    b_texTop = blockTextures[GrassTop];
+    b_texBottom = blockTextures[Dirt];
+  }
   bool faceDrawn = false;
   // Above
   if (y + 1 >= chunkSize) {
-      b.insertVertices(topFace, b_tex);
+      b.insertVertices(topFace, b_texTop);
       faceDrawn = true;
   }
 
   // Below
   if (y - 1 < 0 ) {
-      b.insertVertices(bottomFace, b_tex);
+      b.insertVertices(bottomFace, b_texBottom);
       faceDrawn = true;
   }
 
   // Right
   if (x + 1 >= chunkSize ) {
-      b.insertVertices(rightFace, b_tex);
+      b.insertVertices(rightFace, b_texSides);
       faceDrawn = true;
   }
 
   // Left
   if (x - 1 < 0 ) {
-      b.insertVertices(leftFace, b_tex);
+      b.insertVertices(leftFace, b_texSides);
       faceDrawn = true;
   }
 
   // Front
   if (z - 1 < 0 ) {
-      b.insertVertices(frontFace, b_tex);
+      b.insertVertices(frontFace, b_texSides);
       faceDrawn = true;
   }
 
   // Behind
   if (z + 1 >= chunkSize ) {
-      b.insertVertices(backFace, b_tex);
+      b.insertVertices(backFace, b_texSides);
       faceDrawn = true;
   }
 

@@ -5,14 +5,14 @@
 
 enum blockType{
   Grass = 0,
-  GassTop = 1,
+  GrassTop = 1,
   Dirt = 2,
   Stone = 3,
 };
 
 class Block{
   public:
-    Block(blockType b_type, float xPos, float yPos, float zPos) : type(b_type), x(xPos), y(yPos), z(zPos){
+    Block(float xPos, float yPos, float zPos) :x(xPos), y(yPos), z(zPos){
 
     }
 
@@ -26,6 +26,10 @@ class Block{
             translatedVertex[4] = tex[i][1];
             vertices.insert(vertices.end(), translatedVertex.begin(), translatedVertex.end());
         }
+    }
+    
+    void setType(blockType block){
+      this->type = block;
     }
 
     int getBlockId(){
