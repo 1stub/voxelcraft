@@ -20,7 +20,7 @@ class Block;
 class Chunk{
   friend Block;
   public:
-    Chunk();
+    Chunk(int xOffset, int zOffset);
     int getNumBlocks();
     void initChunk();
     void updateVertices();

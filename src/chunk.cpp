@@ -1,14 +1,14 @@
 #include "chunk.h"
 #include "block.h"
 
-Chunk::Chunk(){
+Chunk::Chunk(int xOffset, int zOffset){
   //set blocks
   generateVoxelGrid();
   setBlockTexture();
   for(int x = 0; x < chunkSize; x++){
     for(int z = 0; z < chunkSize; z++){
         for(int y = 0; y < chunkSize; y++){
-          Block b(static_cast<float>(x), static_cast<float>(y), static_cast<float>(z));
+          Block b(static_cast<float>((xOffset * chunkSize) + x), static_cast<float>(y), static_cast<float>((zOffset * chunkSize) + z));
           if(y >= 15){
             b.setType(Grass);
           }else if(y < 15 && y > 11){

@@ -4,7 +4,7 @@
 #include <string>
 
 #include "font.h"
-#include "chunk.h" 
+#include "chunkManager.h" 
 
 //  g++ -o prog main.cpp glad.c -lGL -lglfw
 
@@ -52,7 +52,6 @@ int main(){
   glEnable(GL_BLEND);
   glEnable(GL_CULL_FACE);
   glCullFace(GL_BACK);
-  glFrontFace(GL_CCW);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  
   glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED); //keeps mouse in game
 
@@ -64,7 +63,7 @@ int main(){
   std::string FPS;
 
   Font font(SCR_WIDTH, SCR_HEIGHT);
-  Chunk chunk;
+  chunkManager chunkManager;
 
   //Our main game loop
   while(!glfwWindowShouldClose(window)){
@@ -101,7 +100,7 @@ int main(){
     int projLoc = glGetUniformLocation(shader.ID, "projection");
     glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
  
-    chunk.drawChunk();
+    chunkManager.drawChunks();
   
     glDisable(GL_DEPTH_TEST);
     font.RenderText(FPS,1540.0f, 870.0f, 0.5f, glm::vec3(1.0f, 1.0f, 1.0f));
