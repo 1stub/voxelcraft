@@ -125,8 +125,12 @@ void Chunk::updateVertices(){
 void Chunk::generateVoxelGrid(){
   for(int x = 0; x < chunkSize; x++){
     for(int z = 0; z < chunkSize; z++){
-      for(int y = 0; y < chunkSize; y++){
-        voxelGrid[x][y][z] = 1;
+      for(int y = 0; y < chunkHeight; y++){
+        if(y < 16){
+          voxelGrid[x][y][z] = 1;
+        }else{
+          voxelGrid[x][y][z] = 0;
+        }
       }
     }
   } 
@@ -144,37 +148,37 @@ bool Chunk::checkNeighbors(Block &b, int x, int y, int z) {
   }
   bool faceDrawn = false;
   // Above
-  if (y + 1 >= chunkSize) {
+  if (y+1 < chunkHeight && voxelGrid[x][y + 1][z] == 0) {
       b.insertVertices(topFace, b_texTop);
       faceDrawn = true;
   }
 
   // Below
-  if (y - 1 < 0 ) {
+  if (y-1 >= 0 && voxelGrid[x][y - 1][z] == 0 ) {
       b.insertVertices(bottomFace, b_texBottom);
       faceDrawn = true;
   }
 
   // Right
-  if (x + 1 >= chunkSize ) {
+  if (x+1 < chunkSize && voxelGrid[x+1][y][z] == 0) {
       b.insertVertices(rightFace, b_texSides);
       faceDrawn = true;
   }
 
   // Left
-  if (x - 1 < 0 ) {
+  if (x-1 >= 0 && voxelGrid[x-1][y][z] == 0) {
       b.insertVertices(leftFace, b_texSides);
       faceDrawn = true;
   }
 
   // Front
-  if (z - 1 < 0 ) {
+  if (z-1 >= 0 && voxelGrid[x][y][z-1] == 0) {
       b.insertVertices(frontFace, b_texSides);
       faceDrawn = true;
   }
 
   // Behind
-  if (z + 1 >= chunkSize ) {
+  if (z+1 < chunkSize && voxelGrid[x][y][z+1] == 0) {
       b.insertVertices(backFace, b_texSides);
       faceDrawn = true;
   }

@@ -35,7 +35,7 @@ int main(){
   }
   glfwMakeContextCurrent(window);
   glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-  glfwSwapInterval(1); //enables vsync, 0 = locked at 60
+  glfwSwapInterval(0); //enables vsync, 1 = locked at 60
 
   glfwSetCursorPosCallback(window, MouseCallback);
 
@@ -55,41 +55,49 @@ int main(){
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  
   glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED); //keeps mouse in game
 
-
   double prevTime = 0.0;
   double crntTime = 0.0;
   double timeDiff;
-  unsigned int counter = 0;
+  double fpsUpdateTime = 0.0;
+  unsigned int frameCount = 0;
   std::string FPS;
 
   Font font(SCR_WIDTH, SCR_HEIGHT);
   chunkManager chunkManager;
 
   //Our main game loop
-  while(!glfwWindowShouldClose(window)){
+// Main game loop
+while (!glfwWindowShouldClose(window)) {
+    // Get current time and calculate the time difference
     crntTime = glfwGetTime();
     timeDiff = crntTime - prevTime;
-    counter++;
-    if(timeDiff >= 1.0 / 30.0){
-      FPS = std::to_string((1.0 / timeDiff) * counter);
+    prevTime = crntTime;
+
+    // Update frame count and FPS calculation
+    frameCount++;
+    fpsUpdateTime += timeDiff;
+
+    if (fpsUpdateTime >= 1.0f) { // Update FPS every second
+        FPS = std::to_string(frameCount); // Integer FPS
+        frameCount = 0;
+        fpsUpdateTime = 0.0f;
     }
 
-    processInput(window, static_cast<float>(crntTime));
 
+    // Update dt and process input
+    processInput(window, static_cast<float>(timeDiff));
+
+    // Clear the screen
     glClearColor(0.4745f, 0.651f, 1.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
  
-    //rendering commands here
+    // Rendering commands
     shader.use();
-
     glm::mat4 model = glm::mat4(1.0f);
     model = glm::rotate(model, glm::radians(0.0f), glm::vec3(0.5f, 1.0f, 0.0f)); 
 
-    glm::mat4 view;
-    view = camera.GetViewMatrix();
-
-    glm::mat4 projection;
-    projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH/SCR_HEIGHT, 0.1f, 100.0f);
+    glm::mat4 view = camera.GetViewMatrix();
+    glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / SCR_HEIGHT, 0.1f, 100.0f);
 
     int modelLoc = glGetUniformLocation(shader.ID, "model");
     glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
@@ -103,11 +111,13 @@ int main(){
     chunkManager.drawChunks();
   
     glDisable(GL_DEPTH_TEST);
-    font.RenderText(FPS,1540.0f, 870.0f, 0.5f, glm::vec3(1.0f, 1.0f, 1.0f));
+    font.RenderText(FPS, 1540.0f, 870.0f, 0.5f, glm::vec3(1.0f, 1.0f, 1.0f));
     glEnable(GL_DEPTH_TEST);
+
+    // Swap buffers and poll events
     glfwSwapBuffers(window);
     glfwPollEvents();
-  }
+}
   glfwTerminate();
   return 0;
 }
@@ -156,6 +166,3 @@ void MouseCallback(GLFWwindow *window, double xpos, double ypos) {
 void framebuffer_size_callback(GLFWwindow *window, int width, int height){
   glViewport(0,0, width, height);
 }
-
-
-

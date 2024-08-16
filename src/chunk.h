@@ -32,7 +32,8 @@ class Chunk{
   private:
     unsigned int VBO, VAO;
     int chunkSize = 16;
-    int voxelGrid[16][16][16];
+    int chunkHeight = 256;
+    int voxelGrid[16][256][16];
     std::vector<Block> blocks; 
     unsigned int texture;
     float verticeCount = 0;
