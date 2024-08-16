@@ -5,6 +5,7 @@
 
 #include "font.h"
 #include "chunkManager.h" 
+#include "raycast.h"
 
 //  g++ -o prog main.cpp glad.c -lGL -lglfw
 
@@ -12,8 +13,6 @@ void MouseCallback(GLFWwindow *window, double xpos, double ypos);
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow *window, float deltaTime);
 
-const unsigned int SCR_WIDTH = 1600;
-const unsigned int SCR_HEIGHT = 900;
 
 GLint pMode;
 
@@ -64,9 +63,9 @@ int main(){
 
   Font font(SCR_WIDTH, SCR_HEIGHT);
   chunkManager chunkManager;
+  Raycast ray(camera, camera.getProjMatrix());
 
   //Our main game loop
-// Main game loop
 while (!glfwWindowShouldClose(window)) {
     // Get current time and calculate the time difference
     crntTime = glfwGetTime();
@@ -82,15 +81,14 @@ while (!glfwWindowShouldClose(window)) {
         frameCount = 0;
         fpsUpdateTime = 0.0f;
     }
-
-
-    // Update dt and process input
-    processInput(window, static_cast<float>(timeDiff));
-
+    
     // Clear the screen
     glClearColor(0.4745f, 0.651f, 1.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
  
+    // Update dt and process input
+    processInput(window, static_cast<float>(timeDiff));
+
     // Rendering commands
     shader.use();
     glm::mat4 model = glm::mat4(1.0f);
@@ -109,9 +107,18 @@ while (!glfwWindowShouldClose(window)) {
     glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
  
     chunkManager.drawChunks();
-  
+ 
+    ray.update(camera.GetViewMatrix(), projection);
+
+    float x, y, z;
+    glm::vec3 cameraWorldPos = camera.getCameraWorldPosition();
+    x = static_cast<float>(cameraWorldPos.x);
+    y = static_cast<float>(cameraWorldPos.y);
+    z = static_cast<float>(cameraWorldPos.z);
     glDisable(GL_DEPTH_TEST);
-    font.RenderText(FPS, 1540.0f, 870.0f, 0.5f, glm::vec3(1.0f, 1.0f, 1.0f));
+    font.RenderText(FPS + " fps", 10.0f, SCR_HEIGHT-20.0f, 0.5f, glm::vec3(1.0f, 1.0f, 1.0f));
+    font.RenderText(std::to_string(x) + ", " + std::to_string(y) + ", " + std::to_string(z), 10.0f, SCR_HEIGHT - 50.0f, 0.5f, glm::vec3(1.0f, 1.0f, 1.0f));
+    font.RenderText(std::to_string(ray.getCurrentRay().x) + ", " + std::to_string(ray.getCurrentRay().y) + ", " + std::to_string(ray.getCurrentRay().z ), 10.0f, SCR_HEIGHT - 80.0f, 0.5f, glm::vec3(1.0f, 1.0f, 1.0f));
     glEnable(GL_DEPTH_TEST);
 
     // Swap buffers and poll events
