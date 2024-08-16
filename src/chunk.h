@@ -7,6 +7,7 @@
 #include "camera.h"
 #include "block.h"
 #include "shader.h"
+#include "SimplexNoise.h"
 
 #include "../resources/stb_image.h"
 
@@ -38,7 +39,8 @@ class Chunk{
     unsigned int texture;
     float verticeCount = 0;
     blockTexCoords blockTextures[4];  
-    
+    SimplexNoise noise;
+
   std::vector<std::vector<float>> frontFace = {
       { 0.5f,  0.5f, -0.5f, 1.0f, 1.0f},
       {-0.5f,  0.5f, -0.5f, 0.0f, 1.0f},

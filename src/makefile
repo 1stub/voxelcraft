@@ -6,7 +6,7 @@ CXXFLAGS = -I/usr/include/freetype2 -I/usr/include/libpng16 -I/usr/include/harfb
 LDFLAGS = -lfreetype -lGL -lglfw  
 
 # Source files
-SRCS = ../resources/stb_image.cpp block.cpp chunk.cpp chunkManager.cpp raycast.cpp main.cpp glad.c
+SRCS = ../resources/stb_image.cpp SimplexNoise.cpp block.cpp chunk.cpp chunkManager.cpp raycast.cpp main.cpp glad.c
 
 # Output executable
 TARGET = prog

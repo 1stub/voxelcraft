@@ -12,6 +12,7 @@
 const unsigned int SCR_WIDTH = 1600;
 const unsigned int SCR_HEIGHT = 900;
 
+//the goat - https://www.youtube.com/watch?v=DLKN0jExRIM
 class Raycast{
   public:
     Raycast(Camera &cam, glm::mat4 proj);
