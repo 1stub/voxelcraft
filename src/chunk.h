@@ -3,6 +3,8 @@
 
 #include <iostream>
 #include <vector>
+#include <tuple>
+#include <map>
 
 #include "camera.h"
 #include "block.h"
@@ -35,7 +37,7 @@ class Chunk{
     int chunkSize = 16;
     int chunkHeight = 256;
     int voxelGrid[16][256][16];
-    std::vector<Block> blocks; 
+    std::map<std::tuple<int,int,int>, Block> blocks; 
     unsigned int texture;
     float verticeCount = 0;
     blockTexCoords blockTextures[4];  

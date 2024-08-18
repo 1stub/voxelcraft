@@ -21,13 +21,14 @@ class Raycast{
     glm::vec3 calculateMouseRay();
     glm::vec3 toWorldCoords(glm::vec4 eyeCoords);
     glm::vec4 toEyeCoords(glm::vec4 clipCoords);
-    glm::vec2 getNormalizedDeviceCoords(float mouseX, float mouseY);
+    glm::vec2 getNormalizedDeviceCoords();
+    glm::vec3 convertWorldToBlockCoords(const glm::vec3& worldCoords, const glm::vec3& blockSize);
     
   private:
     glm::vec3 currentRay;
     glm::mat4 viewMatrix;
     glm::mat4 projectionMatrix;
-    Camera camera;
+    Camera *camera;
 };
 
 #endif

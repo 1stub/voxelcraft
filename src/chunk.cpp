@@ -8,7 +8,7 @@ Chunk::Chunk(int xOffset, int zOffset){
   for(int x = 0; x < chunkSize; x++){
     for(int z = 0; z < chunkSize; z++){
         for(int y = 0; y < chunkSize; y++){
-          Block b(static_cast<float>((xOffset * chunkSize) + x), static_cast<float>(y), static_cast<float>((zOffset * chunkSize) + z));
+          Block b((xOffset * chunkSize) + x, y, (zOffset * chunkSize) + z);
           if(y >= 15){
             b.setType(Grass);
           }else if(y < 15 && y > 11){
@@ -17,8 +17,8 @@ Chunk::Chunk(int xOffset, int zOffset){
             b.setType(Stone);
           }
           if(checkNeighbors(b, x, y, z)){
-            blocks.push_back(b);
-          }
+            blocks.insert({std::make_tuple(x, y, z), std::move(b)});
+        }
       }
     }
   }
@@ -33,7 +33,7 @@ int Chunk::getNumBlocks(){
 void Chunk::initChunk(){
   int totalSize = 0;
   for(const auto &b : blocks){
-    totalSize += b.vertices.size();
+    totalSize += b.second.vertices.size();
   }
   verticeCount = totalSize;
 
@@ -111,10 +111,10 @@ void Chunk::setBlockTexture(){
 //we need to update our vbo with new vertex data
 void Chunk::updateVertices(){
   int offset = 0;
-  for(int i = 0; i < blocks.size(); i++){
+  for(const auto &b : blocks){
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferSubData(GL_ARRAY_BUFFER, offset, blocks[i].vertices.size() * sizeof(float), &blocks[i].vertices.front());
-    offset += blocks[i].vertices.size() * sizeof(float);
+    glBufferSubData(GL_ARRAY_BUFFER, offset, b.second.vertices.size() * sizeof(float), &b.second.vertices.front());
+    offset += b.second.vertices.size() * sizeof(float);
   }
 
   //make this call once, textures get created based on the coords associated with the block

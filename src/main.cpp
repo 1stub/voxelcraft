@@ -65,6 +65,8 @@ int main(){
   chunkManager chunkManager;
   Raycast ray(camera, camera.getProjMatrix());
 
+  glm::vec3 blockSize(1.0f, 1.0f, 1.0f);
+
   //Our main game loop
 while (!glfwWindowShouldClose(window)) {
     // Get current time and calculate the time difference
@@ -117,6 +119,7 @@ while (!glfwWindowShouldClose(window)) {
     z = static_cast<float>(cameraWorldPos.z);
     glDisable(GL_DEPTH_TEST);
     font.RenderText(FPS + " fps", 10.0f, SCR_HEIGHT-20.0f, 0.5f, glm::vec3(1.0f, 1.0f, 1.0f));
+    font.RenderText("+", SCR_WIDTH/2.0f, SCR_HEIGHT/2.0f, 0.5f, glm::vec3(1.0f, 1.0f, 1.0f));
     font.RenderText(std::to_string(x) + ", " + std::to_string(y) + ", " + std::to_string(z), 10.0f, SCR_HEIGHT - 50.0f, 0.5f, glm::vec3(1.0f, 1.0f, 1.0f));
     font.RenderText(std::to_string(ray.getCurrentRay().x) + ", " + std::to_string(ray.getCurrentRay().y) + ", " + std::to_string(ray.getCurrentRay().z ), 10.0f, SCR_HEIGHT - 80.0f, 0.5f, glm::vec3(1.0f, 1.0f, 1.0f));
     glEnable(GL_DEPTH_TEST);
@@ -131,31 +134,36 @@ while (!glfwWindowShouldClose(window)) {
 
 float diff = 0.0f;
 float prevT = 0.0f;
-void processInput(GLFWwindow *window, float deltaTime){
-  glGetIntegerv(GL_POLYGON_MODE, &pMode);
-  if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS){
-    glfwSetWindowShouldClose(window, true);
-  }
 
-  if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-      camera.ProcessKeyboard(FORWARD, deltaTime);
-  if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-      camera.ProcessKeyboard(BACKWARD, deltaTime);
-  if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-      camera.ProcessKeyboard(LEFT, deltaTime);
-  if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-      camera.ProcessKeyboard(RIGHT, deltaTime);
-  if(glfwGetKey(window, GLFW_KEY_F)){
-    diff = deltaTime - prevT;
-    if(std::abs(diff) > 0.5){
-      prevT = deltaTime;
-      if(pMode == GL_LINE){
-        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-      }else{
-        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-      }
+void processInput(GLFWwindow *window, float deltaTime){
+    glGetIntegerv(GL_POLYGON_MODE, &pMode);
+    
+    if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS){
+        glfwSetWindowShouldClose(window, true);
     }
-  }
+
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+        camera.ProcessKeyboard(FORWARD, deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+        camera.ProcessKeyboard(BACKWARD, deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+        camera.ProcessKeyboard(LEFT, deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+        camera.ProcessKeyboard(RIGHT, deltaTime);
+
+    static bool fKeyPressed = false;
+    if(glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS && !fKeyPressed){
+        fKeyPressed = true;
+        if(pMode == GL_LINE){
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        }else{
+            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        }
+    }
+
+    if(glfwGetKey(window, GLFW_KEY_F) == GLFW_RELEASE){
+        fKeyPressed = false;
+    }
 }
 
 void MouseCallback(GLFWwindow *window, double xpos, double ypos) {
