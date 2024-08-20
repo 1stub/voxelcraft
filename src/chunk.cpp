@@ -3,21 +3,19 @@
 
 Chunk::Chunk(int xOffset, int zOffset){
   //set blocks
-  generateVoxelGrid();
+  generateHeightMap();
   setBlockTexture();
   for(int x = 0; x < chunkSize; x++){
     for(int z = 0; z < chunkSize; z++){
-        for(int y = 0; y < chunkSize; y++){
+      int height = (2 * p.noise2D_01(x, z)) + chunkSize;
+      for(int y = 0; y <= chunkHeight; y++){
+        if (voxelGrid[x][y][z] != 0) {
           Block b((xOffset * chunkSize) + x, y, (zOffset * chunkSize) + z);
-          if(y >= 15){
-            b.setType(Grass);
-          }else if(y < 15 && y > 11){
-            b.setType(Dirt);
-          }else{
-            b.setType(Stone);
+          b.setType(y == height  ? Grass : y > height - 3 && y < height ? Dirt : Stone);
+
+          if (checkNeighbors(b, x, y, z)) {
+              blocks.push_back(b);
           }
-          if(checkNeighbors(b, x, y, z)){
-            blocks.insert({std::make_tuple(x, y, z), std::move(b)});
         }
       }
     }
@@ -33,7 +31,7 @@ int Chunk::getNumBlocks(){
 void Chunk::initChunk(){
   int totalSize = 0;
   for(const auto &b : blocks){
-    totalSize += b.second.vertices.size();
+    totalSize += b.vertices.size();
   }
   verticeCount = totalSize;
 
@@ -90,6 +88,7 @@ void Chunk::textureBlocks() {
   stbi_image_free(data);
 }
 
+//this generates our textures into an array - should probably be done in the chunkManager
 void Chunk::setBlockTexture(){
   constexpr float y = 0;
   constexpr float sheetWidth = 64.0f;
@@ -113,24 +112,21 @@ void Chunk::updateVertices(){
   int offset = 0;
   for(const auto &b : blocks){
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferSubData(GL_ARRAY_BUFFER, offset, b.second.vertices.size() * sizeof(float), &b.second.vertices.front());
-    offset += b.second.vertices.size() * sizeof(float);
+    glBufferSubData(GL_ARRAY_BUFFER, offset, b.vertices.size() * sizeof(float), &b.vertices.front());
+    offset += b.vertices.size() * sizeof(float);
   }
 
   //make this call once, textures get created based on the coords associated with the block
   textureBlocks();
 }
 
-//This creates a bitmap we use to check adjacent blocks
-void Chunk::generateVoxelGrid(){
-  for(int x = 0; x < chunkSize; x++){
-    for(int z = 0; z < chunkSize; z++){
-      for(int y = 0; y < chunkHeight; y++){
-        if(y < 16){
-          voxelGrid[x][y][z] = 1;
-        }else{
-          voxelGrid[x][y][z] = 0;
-        }
+//This creates a heightmap we use to check adjacent blocks
+void Chunk::generateHeightMap(){
+  for(int x = -1; x < chunkSize + 1; ++x){
+    for(int z = -1; z < chunkSize + 1; ++z){
+      int height = (2 * p.noise2D_01(x+1, z+1)) + chunkSize;
+      for(int y = 0; y < chunkHeight; ++y){
+        voxelGrid[x+1][y][z+1] = (y <= height) ? 1 : 0;
       }
     }
   } 
@@ -185,6 +181,12 @@ bool Chunk::checkNeighbors(Block &b, int x, int y, int z) {
 
   return faceDrawn;
 }
+
+// decided to try to use Bresenham Line Algo instead 
+glm::vec3 Chunk::checkRayIntersection(Raycast &ray, Camera &c){
+
+}
+
 void Chunk::drawChunk(){
   glDisable(GL_CULL_FACE);
   glBindTexture(GL_TEXTURE_2D, texture);

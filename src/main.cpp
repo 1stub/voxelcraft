@@ -65,8 +65,6 @@ int main(){
   chunkManager chunkManager;
   Raycast ray(camera, camera.getProjMatrix());
 
-  glm::vec3 blockSize(1.0f, 1.0f, 1.0f);
-
   //Our main game loop
 while (!glfwWindowShouldClose(window)) {
     // Get current time and calculate the time difference
@@ -97,7 +95,7 @@ while (!glfwWindowShouldClose(window)) {
     model = glm::rotate(model, glm::radians(0.0f), glm::vec3(0.5f, 1.0f, 0.0f)); 
 
     glm::mat4 view = camera.GetViewMatrix();
-    glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / SCR_HEIGHT, 0.1f, 100.0f);
+    glm::mat4 projection = glm::perspective(glm::radians(45.0f), ((float)SCR_WIDTH / (float)SCR_HEIGHT), 0.1f, 100.0f);
 
     int modelLoc = glGetUniformLocation(shader.ID, "model");
     glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
@@ -112,16 +110,13 @@ while (!glfwWindowShouldClose(window)) {
  
     ray.update(camera.GetViewMatrix(), projection);
 
-    float x, y, z;
     glm::vec3 cameraWorldPos = camera.getCameraWorldPosition();
-    x = static_cast<float>(cameraWorldPos.x);
-    y = static_cast<float>(cameraWorldPos.y);
-    z = static_cast<float>(cameraWorldPos.z);
+
     glDisable(GL_DEPTH_TEST);
     font.RenderText(FPS + " fps", 10.0f, SCR_HEIGHT-20.0f, 0.5f, glm::vec3(1.0f, 1.0f, 1.0f));
     font.RenderText("+", SCR_WIDTH/2.0f, SCR_HEIGHT/2.0f, 0.5f, glm::vec3(1.0f, 1.0f, 1.0f));
-    font.RenderText(std::to_string(x) + ", " + std::to_string(y) + ", " + std::to_string(z), 10.0f, SCR_HEIGHT - 50.0f, 0.5f, glm::vec3(1.0f, 1.0f, 1.0f));
-    font.RenderText(std::to_string(ray.getCurrentRay().x) + ", " + std::to_string(ray.getCurrentRay().y) + ", " + std::to_string(ray.getCurrentRay().z ), 10.0f, SCR_HEIGHT - 80.0f, 0.5f, glm::vec3(1.0f, 1.0f, 1.0f));
+    font.RenderText(std::to_string(cameraWorldPos.x) + ", " + std::to_string(cameraWorldPos.y) + ", " + std::to_string(cameraWorldPos.z), 10.0f, SCR_HEIGHT - 50.0f, 0.5f, glm::vec3(1.0f, 1.0f, 1.0f));
+    font.RenderText(std::to_string(ray.getCurrentRay().x) + ", " + std::to_string(ray.getCurrentRay().y) + ", " + std::to_string(ray.getCurrentRay().z), 10.0f, SCR_HEIGHT - 110.0f, 0.5f, glm::vec3(1.0f, 1.0f, 1.0f));
     glEnable(GL_DEPTH_TEST);
 
     // Swap buffers and poll events

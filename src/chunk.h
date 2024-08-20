@@ -3,13 +3,13 @@
 
 #include <iostream>
 #include <vector>
-#include <tuple>
 #include <map>
 
 #include "camera.h"
 #include "block.h"
 #include "shader.h"
-#include "SimplexNoise.h"
+#include "raycast.h"
+#include "perlin.hpp"
 
 #include "../resources/stb_image.h"
 
@@ -30,18 +30,19 @@ class Chunk{
     void textureBlocks();
     void setBlockTexture();
     bool checkNeighbors(Block &b, int x, int y, int z);
-    void generateVoxelGrid();
+    void generateHeightMap();
+    glm::vec3 checkRayIntersection(Raycast &ray, Camera &c);
     void drawChunk();
   private:
     unsigned int VBO, VAO;
     int chunkSize = 16;
     int chunkHeight = 256;
-    int voxelGrid[16][256][16];
-    std::map<std::tuple<int,int,int>, Block> blocks; 
+    int voxelGrid[16+2][256][16+2]; //+2 for padding
+    std::vector<Block> blocks; 
     unsigned int texture;
     float verticeCount = 0;
     blockTexCoords blockTextures[4];  
-    SimplexNoise noise;
+    siv::PerlinNoise p;
 
   std::vector<std::vector<float>> frontFace = {
       { 0.5f,  0.5f, -0.5f, 1.0f, 1.0f},
