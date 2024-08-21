@@ -1,6 +1,5 @@
 #include "raycast.h"
 #include <glm/gtc/type_ptr.hpp>
-#include <iostream>
 
 Raycast::Raycast(Camera &cam, glm::mat4 proj) : camera(&cam), projectionMatrix(proj) {
   viewMatrix = camera->GetViewMatrix();

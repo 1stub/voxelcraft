@@ -43,6 +43,10 @@ void Chunk::generateHeightMap(const siv::PerlinNoise &p){
     }
 }
 
+std::vector<Block> Chunk::getBlocks(){
+  return blocks;
+}
+
 int Chunk::getNumBlocks(){
   return blocks.size();
 }
@@ -209,10 +213,6 @@ bool Chunk::checkNeighbors(Block &b, int x, int y, int z) {
 
     return faceDrawn;
 }
-
-// decided to try to use Bresenham Line Algo instead 
-//glm::vec3 Chunk::checkRayIntersection(Raycast &ray, Camera &c){
-//}
 
 void Chunk::drawChunk(){
   glDisable(GL_CULL_FACE);

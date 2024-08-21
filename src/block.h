@@ -37,12 +37,12 @@ class Block{
     }
 
     std::vector<float> vertices; 
-  
-  private:
-    blockType type;
     int x;
     int y;
-    int  z;
+    int z;
+  private:
+    blockType type;
+
 };
 
 #endif

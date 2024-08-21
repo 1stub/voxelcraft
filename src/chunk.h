@@ -31,8 +31,10 @@ class Chunk{
     void setBlockTexture();
     bool checkNeighbors(Block &b, int x, int y, int z);
     void generateHeightMap(const siv::PerlinNoise &p);
+    std::vector<Block> getBlocks();
     glm::vec3 checkRayIntersection(Raycast &ray, Camera &c);
     double getNoiseValue(const siv::PerlinNoise &p, int x, int z);
+    glm::vec3 mouseVoxel(Raycast &ray, Camera &camera);
     void drawChunk();
   private:
     unsigned int VBO, VAO;
