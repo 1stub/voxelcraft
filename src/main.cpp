@@ -7,8 +7,6 @@
 #include "chunkManager.h" 
 #include "raycast.h"
 
-//  g++ -o prog main.cpp glad.c -lGL -lglfw
-
 void MouseCallback(GLFWwindow *window, double xpos, double ypos);
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow *window, float deltaTime);

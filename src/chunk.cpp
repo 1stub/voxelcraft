@@ -1,19 +1,20 @@
 #include "chunk.h"
 #include "block.h"
 
-Chunk::Chunk(int xOffset, int zOffset){
+Chunk::Chunk(int xOff, int zOff, const siv::PerlinNoise &p) : xOffset(xOff), zOffset(zOff){
   //set blocks
-  generateHeightMap();
+  generateHeightMap(p);
   setBlockTexture();
   for(int x = 0; x < chunkSize; x++){
     for(int z = 0; z < chunkSize; z++){
-      int height = (2 * p.noise2D_01(x, z)) + chunkSize;
-      for(int y = 0; y <= chunkHeight; y++){
-        if (voxelGrid[x][y][z] != 0) {
+        double noiseValue = getNoiseValue(p, x, z);
+        int height = static_cast<int>(noiseValue * 2) + chunkSize;
+      for(int y = 0; y < chunkHeight; y++){
+        if (voxelGrid[x+1][y][z+1] == 1) {
           Block b((xOffset * chunkSize) + x, y, (zOffset * chunkSize) + z);
-          b.setType(y == height  ? Grass : y > height - 3 && y < height ? Dirt : Stone);
+          b.setType(y < height ? Grass : y > height - 3 && y < height -1 ? Dirt : Stone);
 
-          if (checkNeighbors(b, x, y, z)) {
+          if (checkNeighbors(b, x + 1, y, z + 1)) {
               blocks.push_back(b);
           }
         }
@@ -22,6 +23,25 @@ Chunk::Chunk(int xOffset, int zOffset){
   }
   initChunk();
   updateVertices();
+}
+
+//This creates a heightmap we use to check adjacent blocks
+//created padding around map to allow for adjacent blocks in other chunks to be visible for determinng renderd faces
+// In generateHeightMap, ensure noise values are consistent across borders
+double Chunk::getNoiseValue(const siv::PerlinNoise &p, int x, int z) {
+    return p.noise2D_01((xOffset * chunkSize) + x, (zOffset * chunkSize) + z);
+}
+
+void Chunk::generateHeightMap(const siv::PerlinNoise &p){
+    for(int x = -1; x < chunkSize + 1; x++){
+        for(int z = -1; z < chunkSize + 1; z++){
+            double noiseValue = getNoiseValue(p, x, z);
+            int height = static_cast<int>(noiseValue * 2) + chunkSize;
+            for(int y = 0; y < chunkHeight; y++){
+                voxelGrid[x+1][y][z+1] = (y < height) ? 1 : 0;
+            }
+        }
+    }
 }
 
 int Chunk::getNumBlocks(){
@@ -120,72 +140,80 @@ void Chunk::updateVertices(){
   textureBlocks();
 }
 
-//This creates a heightmap we use to check adjacent blocks
-void Chunk::generateHeightMap(){
-  for(int x = -1; x < chunkSize + 1; ++x){
-    for(int z = -1; z < chunkSize + 1; ++z){
-      int height = (2 * p.noise2D_01(x+1, z+1)) + chunkSize;
-      for(int y = 0; y < chunkHeight; ++y){
-        voxelGrid[x+1][y][z+1] = (y <= height) ? 1 : 0;
-      }
-    }
-  } 
-}
-
 //This checks to see what faces are visible
 //Will eventually need to use the voxelGrid for this
 bool Chunk::checkNeighbors(Block &b, int x, int y, int z) {
-  blockTexCoords b_texSides = blockTextures[b.getBlockId()];
-  blockTexCoords b_texTop = blockTextures[b.getBlockId()];
-  blockTexCoords b_texBottom = blockTextures[b.getBlockId()];
-  if(b.getBlockId() == Grass){
-    b_texTop = blockTextures[GrassTop];
-    b_texBottom = blockTextures[Dirt];
-  }
-  bool faceDrawn = false;
-  // Above
-  if (y+1 < chunkHeight && voxelGrid[x][y + 1][z] == 0) {
-      b.insertVertices(topFace, b_texTop);
-      faceDrawn = true;
-  }
+    blockTexCoords b_texSides = blockTextures[b.getBlockId()];
+    blockTexCoords b_texTop = blockTextures[b.getBlockId()];
+    blockTexCoords b_texBottom = blockTextures[b.getBlockId()];
 
-  // Below
-  if (y-1 >= 0 && voxelGrid[x][y - 1][z] == 0 ) {
-      b.insertVertices(bottomFace, b_texBottom);
-      faceDrawn = true;
-  }
+    if(b.getBlockId() == Grass) {
+        b_texTop = blockTextures[GrassTop];
+        b_texBottom = blockTextures[Dirt];
+    }
 
-  // Right
-  if (x+1 < chunkSize && voxelGrid[x+1][y][z] == 0) {
-      b.insertVertices(rightFace, b_texSides);
-      faceDrawn = true;
-  }
+    bool faceDrawn = false;
 
-  // Left
-  if (x-1 >= 0 && voxelGrid[x-1][y][z] == 0) {
-      b.insertVertices(leftFace, b_texSides);
-      faceDrawn = true;
-  }
+    // Helper lambda to check if the block is air (or not solid)
+    auto isAir = [&](int x, int y, int z) -> bool {
+        // Check if coordinates are within the chunk
+        if (x >= 0 && x < chunkSize + 2 && z >= 0 && z < chunkSize + 2 && y > 0 && y < chunkHeight) {
+            return voxelGrid[x][y][z] == 0;
+        }
+        // If out of bounds, check neighboring chunks (this part depends on how you store/access neighboring chunks)
+        // For example:
+        // if (x < 0) return getNeighboringChunk(LEFT)->isAir(x + chunkSize, y, z);
+        // if (x >= chunkSize + 2) return getNeighboringChunk(RIGHT)->isAir(x - chunkSize, y, z);
+        // if (z < 0) return getNeighboringChunk(FRONT)->isAir(x, y, z + chunkSize);
+        // if (z >= chunkSize + 2) return getNeighboringChunk(BACK)->isAir(x, y, z - chunkSize);
 
-  // Front
-  if (z-1 >= 0 && voxelGrid[x][y][z-1] == 0) {
-      b.insertVertices(frontFace, b_texSides);
-      faceDrawn = true;
-  }
+        // for this program I am not accessing neigboring chunks but rather storing padding around my voxel map.
 
-  // Behind
-  if (z+1 < chunkSize && voxelGrid[x][y][z+1] == 0) {
-      b.insertVertices(backFace, b_texSides);
-      faceDrawn = true;
-  }
+        return false;  // Assume out of bounds means air
+    };
 
-  return faceDrawn;
+    // Above
+    if (isAir(x, y + 1, z)) {
+        b.insertVertices(topFace, b_texTop);
+        faceDrawn = true;
+    }
+
+    // Below
+    if (isAir(x, y - 1, z)) {
+        b.insertVertices(bottomFace, b_texBottom);
+        faceDrawn = true;
+    }
+
+    // Right
+    if (isAir(x + 1, y, z)) {
+        b.insertVertices(rightFace, b_texSides);
+        faceDrawn = true;
+    }
+
+    // Left
+    if (isAir(x - 1, y, z)) {
+        b.insertVertices(leftFace, b_texSides);
+        faceDrawn = true;
+    }
+
+    // Front
+    if (isAir(x, y, z - 1)) {
+        b.insertVertices(frontFace, b_texSides);
+        faceDrawn = true;
+    }
+
+    // Behind
+    if (isAir(x, y, z + 1)) {
+        b.insertVertices(backFace, b_texSides);
+        faceDrawn = true;
+    }
+
+    return faceDrawn;
 }
 
 // decided to try to use Bresenham Line Algo instead 
-glm::vec3 Chunk::checkRayIntersection(Raycast &ray, Camera &c){
-
-}
+//glm::vec3 Chunk::checkRayIntersection(Raycast &ray, Camera &c){
+//}
 
 void Chunk::drawChunk(){
   glDisable(GL_CULL_FACE);

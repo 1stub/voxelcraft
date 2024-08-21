@@ -23,26 +23,28 @@ class Block;
 class Chunk{
   friend Block;
   public:
-    Chunk(int xOffset, int zOffset);
+    Chunk(int xOff, int zOff, const siv::PerlinNoise &perlin);
     int getNumBlocks();
     void initChunk();
     void updateVertices();
     void textureBlocks();
     void setBlockTexture();
     bool checkNeighbors(Block &b, int x, int y, int z);
-    void generateHeightMap();
+    void generateHeightMap(const siv::PerlinNoise &p);
     glm::vec3 checkRayIntersection(Raycast &ray, Camera &c);
+    double getNoiseValue(const siv::PerlinNoise &p, int x, int z);
     void drawChunk();
   private:
     unsigned int VBO, VAO;
     int chunkSize = 16;
     int chunkHeight = 256;
+    int xOffset;
+    int zOffset;
     int voxelGrid[16+2][256][16+2]; //+2 for padding
     std::vector<Block> blocks; 
     unsigned int texture;
     float verticeCount = 0;
     blockTexCoords blockTextures[4];  
-    siv::PerlinNoise p;
 
   std::vector<std::vector<float>> frontFace = {
       { 0.5f,  0.5f, -0.5f, 1.0f, 1.0f},
