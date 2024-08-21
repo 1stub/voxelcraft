@@ -10,7 +10,7 @@ class chunkManager{
     glm::vec3 checkRayAllChunks(Raycast &ray, Camera &camera);
     void drawChunks();
   private:
-    int renderDistance = 1;
+    int renderDistance = 5;
     const siv::PerlinNoise p;
     std::vector<Chunk> chunks;
 };

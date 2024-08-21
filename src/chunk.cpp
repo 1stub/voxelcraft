@@ -7,12 +7,12 @@ Chunk::Chunk(int xOff, int zOff, const siv::PerlinNoise &p) : xOffset(xOff), zOf
   setBlockTexture();
   for(int x = 0; x < chunkSize; x++){
     for(int z = 0; z < chunkSize; z++){
-        double noiseValue = getNoiseValue(p, x, z);
-        int height = static_cast<int>(noiseValue * 2) + chunkSize;
+      double noiseValue = getNoiseValue(p, x, z);
+      int height = static_cast<int>(noiseValue) + chunkSize;
       for(int y = 0; y < chunkHeight; y++){
         if (voxelGrid[x+1][y][z+1] == 1) {
           Block b((xOffset * chunkSize) + x, y, (zOffset * chunkSize) + z);
-          b.setType(y < height ? Grass : y > height - 3 && y < height -1 ? Dirt : Stone);
+          b.setType(y == height - 1 ? Grass : y > height - 4 ? Dirt : Stone);
 
           if (checkNeighbors(b, x + 1, y, z + 1)) {
               blocks.push_back(b);
@@ -27,16 +27,15 @@ Chunk::Chunk(int xOff, int zOff, const siv::PerlinNoise &p) : xOffset(xOff), zOf
 
 //This creates a heightmap we use to check adjacent blocks
 //created padding around map to allow for adjacent blocks in other chunks to be visible for determinng renderd faces
-// In generateHeightMap, ensure noise values are consistent across borders
 double Chunk::getNoiseValue(const siv::PerlinNoise &p, int x, int z) {
-    return p.noise2D_01((xOffset * chunkSize) + x, (zOffset * chunkSize) + z);
+    return p.normalizedOctave2D_01(((xOffset * chunkSize) + x) * frequency, ((zOffset * chunkSize) + z) * frequency, octaves, persistence) * (double)25;
 }
 
 void Chunk::generateHeightMap(const siv::PerlinNoise &p){
     for(int x = -1; x < chunkSize + 1; x++){
         for(int z = -1; z < chunkSize + 1; z++){
             double noiseValue = getNoiseValue(p, x, z);
-            int height = static_cast<int>(noiseValue * 2) + chunkSize;
+            int height = static_cast<int>(noiseValue) + chunkSize;
             for(int y = 0; y < chunkHeight; y++){
                 voxelGrid[x+1][y][z+1] = (y < height) ? 1 : 0;
             }

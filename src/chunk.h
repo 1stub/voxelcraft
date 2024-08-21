@@ -40,11 +40,16 @@ class Chunk{
     int chunkHeight = 256;
     int xOffset;
     int zOffset;
-    int voxelGrid[16+2][256][16+2]; //+2 for padding
+    unsigned char voxelGrid[16+2][256][16+2]; //+2 for padding
     std::vector<Block> blocks; 
     unsigned int texture;
     float verticeCount = 0;
-    blockTexCoords blockTextures[4];  
+    blockTexCoords blockTextures[4]; 
+    
+    //for siv::PerlinNoise
+    int octaves = 8;
+    float persistence = 0.5;
+    float frequency = 0.01;
 
   std::vector<std::vector<float>> frontFace = {
       { 0.5f,  0.5f, -0.5f, 1.0f, 1.0f},
