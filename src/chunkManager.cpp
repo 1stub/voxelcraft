@@ -3,9 +3,8 @@
 chunkManager::chunkManager(){
   for(int i = -renderDistance; i < renderDistance; i++){
     for(int j = -renderDistance; j < renderDistance; j++){
-      Chunk c(i, j, p);
-      chunks.push_back(c);
-      for(auto &b : c.getBlocks()){
+      chunks.emplace(glm::ivec2(i,j), std::make_unique<Chunk>(i, j, p));
+      for(auto &b : chunks[glm::ivec2(i,j)]->getBlocks()){
         blockManager.insert({b.x, b.y, b.z});
       }
     }
@@ -15,6 +14,16 @@ chunkManager::chunkManager(){
 bool chunkManager::blockExists(int x, int y, int z) const {
     BlockCoord coord = {x, y, z};
     return blockManager.find(coord) != blockManager.end();
+}
+
+Block chunkManager::fetchBlockFromChunk(glm::ivec3 blockCoords){
+  glm::ivec2 chunkCoords(blockCoords.x/16, blockCoords.y / 16); //hard coded for now, 16 is our chunk size
+  Chunk c = fetchChunk(chunkCoords);
+  //Block b = c.fetchBlock(blockCoords);
+}
+
+Chunk chunkManager::fetchChunk(glm::ivec2 chunkCoords){
+  return *chunks[glm::ivec2(chunkCoords.x, chunkCoords.y)]; 
 }
 
 glm::vec3 chunkManager::mouseVoxel(Raycast &ray, Camera &camera) {
@@ -103,6 +112,6 @@ glm::vec3 chunkManager::mouseVoxel(Raycast &ray, Camera &camera) {
 
 void chunkManager::drawChunks(){
   for(auto &c : chunks){
-    c.drawChunk();
+    c.second->drawChunk();
   }
 }

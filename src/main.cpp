@@ -1,6 +1,7 @@
 //#include <glad/glad.h>
 //#include <GLFW/glfw3.h>
 
+#include <glm/ext/matrix_transform.hpp>
 #include <string>
 
 #include "font.h"
@@ -43,6 +44,7 @@ int main(){
   }
 
   Shader shader("../shaders/shader.vs", "../shaders/shader.fs");
+  Shader outlineShader("../shaders/outline.vs", "../shaders/outline.fs");
 
   //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
   glEnable(GL_DEPTH_TEST);
@@ -63,6 +65,7 @@ int main(){
   chunkManager chunkManager;
   Raycast ray(camera, camera.getProjMatrix());
 
+  unsigned int b_VBO, b_VAO; //these are used to render only verticies of selected block.
   //Our main game loop
 while (!glfwWindowShouldClose(window)) {
     // Get current time and calculate the time difference
@@ -84,16 +87,21 @@ while (!glfwWindowShouldClose(window)) {
     glClearColor(0.4745f, 0.651f, 1.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
  
+    //outlineing test code
+    glStencilFunc(GL_ALWAYS, 1, 0xFF);
+    glStencilMask(0xFF);
+
     // Update dt and process input
     processInput(window, static_cast<float>(timeDiff));
 
     // Rendering commands
     shader.use();
+
     glm::mat4 model = glm::mat4(1.0f);
     model = glm::rotate(model, glm::radians(0.0f), glm::vec3(0.5f, 1.0f, 0.0f)); 
 
     glm::mat4 view = camera.GetViewMatrix();
-    glm::mat4 projection = glm::perspective(glm::radians(45.0f), ((float)SCR_WIDTH / (float)SCR_HEIGHT), 0.1f, 100.0f);
+    glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), ((float)SCR_WIDTH / (float)SCR_HEIGHT), 0.1f, 100.0f);
 
     int modelLoc = glGetUniformLocation(shader.ID, "model");
     glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
@@ -103,11 +111,11 @@ while (!glfwWindowShouldClose(window)) {
     
     int projLoc = glGetUniformLocation(shader.ID, "projection");
     glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
- 
+
     chunkManager.drawChunks();
 
-    //this is mega innefficient since we check literally every block, but for testing sake of raycasting its fine
     glm::vec3 voxel = chunkManager.mouseVoxel(ray, camera);
+    //Block selectedBlock = chunkManager.fetchBlock(voxel);
 
     ray.update(camera.GetViewMatrix(), projection);
     

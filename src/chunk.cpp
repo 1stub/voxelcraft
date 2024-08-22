@@ -11,11 +11,17 @@ Chunk::Chunk(int xOff, int zOff, const siv::PerlinNoise &p) : xOffset(xOff), zOf
       int height = static_cast<int>(noiseValue) + chunkSize;
       for(int y = 0; y < chunkHeight; y++){
         if (voxelGrid[x+1][y][z+1] == 1) {
-          Block b((xOffset * chunkSize) + x, y, (zOffset * chunkSize) + z);
-          b.setType(y == height - 1 ? Grass : y > height - 4 ? Dirt : Stone);
-
-          if (checkNeighbors(b, x + 1, y, z + 1)) {
-              blocks.push_back(b);
+          //our block position
+          glm::ivec3 bPos((xOffset * chunkSize) + x, y, (zOffset * chunkSize) + z);
+          
+          //stores a vector containing integers corresponding to face to draw
+          std::vector<int>faces = checkNeighbors(x + 1, y, z + 1);
+          
+          if (faces.size() > 0) {
+            Block b(bPos.x, bPos.y, bPos.z);
+            b.setType(y == height - 1 ? Grass : y > height - 4 ? Dirt : Stone);
+            setFaces(b, faces);
+            blocks.push_back(b);
           }
         }
       }
@@ -43,12 +49,12 @@ void Chunk::generateHeightMap(const siv::PerlinNoise &p){
     }
 }
 
-std::vector<Block> Chunk::getBlocks(){
-  return blocks;
-}
-
 int Chunk::getNumBlocks(){
   return blocks.size();
+}
+
+std::vector<Block> Chunk::getBlocks(){
+  return blocks;
 }
 
 void Chunk::initChunk(){
@@ -145,18 +151,8 @@ void Chunk::updateVertices(){
 
 //This checks to see what faces are visible
 //Will eventually need to use the voxelGrid for this
-bool Chunk::checkNeighbors(Block &b, int x, int y, int z) {
-    blockTexCoords b_texSides = blockTextures[b.getBlockId()];
-    blockTexCoords b_texTop = blockTextures[b.getBlockId()];
-    blockTexCoords b_texBottom = blockTextures[b.getBlockId()];
-
-    if(b.getBlockId() == Grass) {
-        b_texTop = blockTextures[GrassTop];
-        b_texBottom = blockTextures[Dirt];
-    }
-
-    bool faceDrawn = false;
-
+std::vector<int> Chunk::checkNeighbors(int x, int y, int z) {
+    std::vector<int> faces;
     // Helper lambda to check if the block is air (or not solid)
     auto isAir = [&](int x, int y, int z) -> bool {
         // Check if coordinates are within the chunk
@@ -175,43 +171,75 @@ bool Chunk::checkNeighbors(Block &b, int x, int y, int z) {
         return false;  // Assume out of bounds means air
     };
 
+    //Above = 0
+    //Below = 1
+    //Right = 2
+    //Left = 3
+    //Front = 4
+    //Behind = 5
+
     // Above
     if (isAir(x, y + 1, z)) {
-        b.insertVertices(topFace, b_texTop);
-        faceDrawn = true;
+        faces.push_back(0);
     }
 
     // Below
     if (isAir(x, y - 1, z)) {
-        b.insertVertices(bottomFace, b_texBottom);
-        faceDrawn = true;
+        faces.push_back(1);
     }
 
     // Right
     if (isAir(x + 1, y, z)) {
-        b.insertVertices(rightFace, b_texSides);
-        faceDrawn = true;
+        faces.push_back(2);
     }
 
     // Left
     if (isAir(x - 1, y, z)) {
-        b.insertVertices(leftFace, b_texSides);
-        faceDrawn = true;
+        faces.push_back(3);
     }
 
     // Front
     if (isAir(x, y, z - 1)) {
-        b.insertVertices(frontFace, b_texSides);
-        faceDrawn = true;
+        faces.push_back(4);
     }
 
     // Behind
     if (isAir(x, y, z + 1)) {
-        b.insertVertices(backFace, b_texSides);
-        faceDrawn = true;
+        faces.push_back(5);    
     }
+    return faces;
+}
 
-    return faceDrawn;
+void Chunk::setFaces(Block &b, std::vector<int> faces){
+  blockTexCoords b_texSides = blockTextures[b.getBlockId()];
+  blockTexCoords b_texTop = blockTextures[b.getBlockId()];
+  blockTexCoords b_texBottom = blockTextures[b.getBlockId()];
+
+  if(b.getBlockId() == Grass) {
+      b_texTop = blockTextures[GrassTop];
+      b_texBottom = blockTextures[Dirt];
+  }
+
+  for(int f : faces){
+    if(f == 0){
+      b.insertVertices(topFace, b_texTop);
+    }
+    if(f == 1){
+      b.insertVertices(bottomFace, b_texBottom);
+    }
+    if(f == 2){
+      b.insertVertices(rightFace, b_texSides);
+    }
+    if(f == 3){
+      b.insertVertices(leftFace, b_texSides);
+    }
+    if(f == 4){
+      b.insertVertices(frontFace, b_texSides);
+    }
+    if(f == 5){
+      b.insertVertices(backFace, b_texSides);
+    }
+  }
 }
 
 void Chunk::drawChunk(){

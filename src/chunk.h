@@ -29,7 +29,8 @@ class Chunk{
     void updateVertices();
     void textureBlocks();
     void setBlockTexture();
-    bool checkNeighbors(Block &b, int x, int y, int z);
+    std::vector<int> checkNeighbors(int x, int y, int z);
+    void setFaces(Block &b, std::vector<int> faces);
     void generateHeightMap(const siv::PerlinNoise &p);
     std::vector<Block> getBlocks();
     glm::vec3 checkRayIntersection(Raycast &ray, Camera &c);
