@@ -3,8 +3,9 @@
 chunkManager::chunkManager(){
   for(int i = -renderDistance; i < renderDistance; i++){
     for(int j = -renderDistance; j < renderDistance; j++){
-      chunks.emplace(glm::ivec2(i,j), std::make_unique<Chunk>(i, j, p));
-      for(auto &b : chunks[glm::ivec2(i,j)]->getBlocks()){
+      glm::ivec2 chunkPos(i,j);
+      chunks.emplace(chunkPos, std::make_unique<Chunk>(i, j, p));
+      for(auto &b : chunks[chunkPos]->getBlocks()){
         blockManager.insert({b.x, b.y, b.z});
       }
     }
@@ -16,14 +17,21 @@ bool chunkManager::blockExists(int x, int y, int z) const {
     return blockManager.find(coord) != blockManager.end();
 }
 
-Block chunkManager::fetchBlockFromChunk(glm::ivec3 blockCoords){
-  glm::ivec2 chunkCoords(blockCoords.x/16, blockCoords.y / 16); //hard coded for now, 16 is our chunk size
-  Chunk c = fetchChunk(chunkCoords);
-  //Block b = c.fetchBlock(blockCoords);
+std::vector<float> chunkManager::fetchBlockFromChunk(glm::ivec3 blockCoords){
+    glm::ivec2 chunkCoords(blockCoords.x / 16, blockCoords.z / 16); // hard coded for now, 16 is our chunk size
+    Chunk c = fetchChunk(chunkCoords);
+    auto blockIt = c.blocks.find(blockCoords);
+
+    if (blockIt != c.blocks.end() && blockIt->second) {
+        return blockIt->second->vertices;
+    } else {
+        std::cerr << "Block not found at coordinates: " << blockCoords.x << ", " << blockCoords.y << ", " << blockCoords.z << std::endl;
+        return std::vector<float>(); // return an empty vector or handle the error as needed
+    }
 }
 
 Chunk chunkManager::fetchChunk(glm::ivec2 chunkCoords){
-  return *chunks[glm::ivec2(chunkCoords.x, chunkCoords.y)]; 
+  return *chunks[chunkCoords]; 
 }
 
 glm::vec3 chunkManager::mouseVoxel(Raycast &ray, Camera &camera) {

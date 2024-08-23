@@ -1,5 +1,6 @@
 #include "chunk.h"
 #include "block.h"
+#include <memory>
 
 Chunk::Chunk(int xOff, int zOff, const siv::PerlinNoise &p) : xOffset(xOff), zOffset(zOff){
   //set blocks
@@ -18,10 +19,9 @@ Chunk::Chunk(int xOff, int zOff, const siv::PerlinNoise &p) : xOffset(xOff), zOf
           std::vector<int>faces = checkNeighbors(x + 1, y, z + 1);
           
           if (faces.size() > 0) {
-            Block b(bPos.x, bPos.y, bPos.z);
-            b.setType(y == height - 1 ? Grass : y > height - 4 ? Dirt : Stone);
-            setFaces(b, faces);
-            blocks.push_back(b);
+            blocks.emplace(bPos, std::make_unique<Block>(bPos.x, bPos.y, bPos.z));
+            blocks[bPos]->setType(y == height - 1 ? Grass : y > height - 4 ? Dirt : Stone);
+            setFaces(bPos, faces);
           }
         }
       }
@@ -49,18 +49,27 @@ void Chunk::generateHeightMap(const siv::PerlinNoise &p){
     }
 }
 
+std::shared_ptr<Block> Chunk::fetchBlock(glm::ivec3 blockCoords){
+  auto block = blocks[blockCoords];
+  return block;
+}
+
 int Chunk::getNumBlocks(){
   return blocks.size();
 }
 
-std::vector<Block> Chunk::getBlocks(){
-  return blocks;
+std::vector<glm::ivec3> Chunk::getBlocks(){
+  std::vector<glm::ivec3> ret;
+  for(auto &b : blocks){
+    ret.push_back(glm::ivec3(b.second->x, b.second->y, b.second->z));
+  }
+  return ret;
 }
 
 void Chunk::initChunk(){
   int totalSize = 0;
-  for(const auto &b : blocks){
-    totalSize += b.vertices.size();
+  for(auto &b : blocks){
+    totalSize += b.second->vertices.size();
   }
   verticeCount = totalSize;
 
@@ -139,10 +148,10 @@ void Chunk::setBlockTexture(){
 //we need to update our vbo with new vertex data
 void Chunk::updateVertices(){
   int offset = 0;
-  for(const auto &b : blocks){
+  for(auto &b : blocks){
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferSubData(GL_ARRAY_BUFFER, offset, b.vertices.size() * sizeof(float), &b.vertices.front());
-    offset += b.vertices.size() * sizeof(float);
+    glBufferSubData(GL_ARRAY_BUFFER, offset, b.second->vertices.size() * sizeof(float), &b.second->vertices.front());
+    offset += b.second->vertices.size() * sizeof(float);
   }
 
   //make this call once, textures get created based on the coords associated with the block
@@ -210,34 +219,34 @@ std::vector<int> Chunk::checkNeighbors(int x, int y, int z) {
     return faces;
 }
 
-void Chunk::setFaces(Block &b, std::vector<int> faces){
-  blockTexCoords b_texSides = blockTextures[b.getBlockId()];
-  blockTexCoords b_texTop = blockTextures[b.getBlockId()];
-  blockTexCoords b_texBottom = blockTextures[b.getBlockId()];
+void Chunk::setFaces(glm::ivec3 bPos, std::vector<int> faces){
+  blockTexCoords b_texSides = blockTextures[blocks[bPos]->getBlockId()];
+  blockTexCoords b_texTop = blockTextures[blocks[bPos]->getBlockId()];
+  blockTexCoords b_texBottom = blockTextures[blocks[bPos]->getBlockId()];
 
-  if(b.getBlockId() == Grass) {
+  if(blocks[bPos]->getBlockId() == Grass) {
       b_texTop = blockTextures[GrassTop];
       b_texBottom = blockTextures[Dirt];
   }
 
   for(int f : faces){
     if(f == 0){
-      b.insertVertices(topFace, b_texTop);
+      blocks[bPos]->insertVertices(topFace, b_texTop);
     }
     if(f == 1){
-      b.insertVertices(bottomFace, b_texBottom);
+      blocks[bPos]->insertVertices(bottomFace, b_texBottom);
     }
     if(f == 2){
-      b.insertVertices(rightFace, b_texSides);
+      blocks[bPos]->insertVertices(rightFace, b_texSides);
     }
     if(f == 3){
-      b.insertVertices(leftFace, b_texSides);
+      blocks[bPos]->insertVertices(leftFace, b_texSides);
     }
     if(f == 4){
-      b.insertVertices(frontFace, b_texSides);
+      blocks[bPos]->insertVertices(frontFace, b_texSides);
     }
     if(f == 5){
-      b.insertVertices(backFace, b_texSides);
+      blocks[bPos]->insertVertices(backFace, b_texSides);
     }
   }
 }

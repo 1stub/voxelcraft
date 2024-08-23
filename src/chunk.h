@@ -2,8 +2,10 @@
 #define CHUNK_H
 
 #include <iostream>
+#include <unordered_map>
 #include <vector>
 #include <map>
+#include <memory>
 
 #include "camera.h"
 #include "block.h"
@@ -19,6 +21,15 @@
 
 typedef std::vector<std::vector<float>> blockTexCoords;
 
+struct Comp_ivec3 {
+  size_t operator()(const glm::ivec3& vec) const {
+    return std::hash<int>()(vec.x) ^ (std::hash<int>()(vec.y) << 1) ^ (std::hash<int>()(vec.z) << 1);
+  }
+  bool operator()(const glm::ivec3& a, const glm::ivec3& b) const {
+    return a.x == b.x && a.y == b.y && a.z == b.z;
+  }
+};
+
 class Block;
 class Chunk{
   friend Block;
@@ -30,13 +41,16 @@ class Chunk{
     void textureBlocks();
     void setBlockTexture();
     std::vector<int> checkNeighbors(int x, int y, int z);
-    void setFaces(Block &b, std::vector<int> faces);
+    void setFaces(glm::ivec3 bPos, std::vector<int> faces);
     void generateHeightMap(const siv::PerlinNoise &p);
-    std::vector<Block> getBlocks();
+    std::vector<glm::ivec3> getBlocks();
     glm::vec3 checkRayIntersection(Raycast &ray, Camera &c);
     double getNoiseValue(const siv::PerlinNoise &p, int x, int z);
     glm::vec3 mouseVoxel(Raycast &ray, Camera &camera);
+    std::shared_ptr<Block> fetchBlock(glm::ivec3 blockCoords);
     void drawChunk();
+
+    std::unordered_map<glm::ivec3, std::shared_ptr<Block>, Comp_ivec3, Comp_ivec3> blocks; 
   private:
     unsigned int VBO, VAO;
     int chunkSize = 16;
@@ -44,7 +58,6 @@ class Chunk{
     int xOffset;
     int zOffset;
     unsigned char voxelGrid[16+2][256][16+2]; //+2 for padding
-    std::vector<Block> blocks; 
     unsigned int texture;
     float verticeCount = 0;
     blockTexCoords blockTextures[4]; 

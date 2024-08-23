@@ -114,8 +114,10 @@ while (!glfwWindowShouldClose(window)) {
 
     chunkManager.drawChunks();
 
-    glm::vec3 voxel = chunkManager.mouseVoxel(ray, camera);
-    //Block selectedBlock = chunkManager.fetchBlock(voxel);
+    glm::ivec3 voxel = chunkManager.mouseVoxel(ray, camera);
+    if(voxel.x != -1 && voxel.y != -1 && voxel.z != -1){
+      std::vector<float> selectedBlockVertices = chunkManager.fetchBlockFromChunk(voxel);
+    }
 
     ray.update(camera.GetViewMatrix(), projection);
     
