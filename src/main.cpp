@@ -66,6 +66,9 @@ int main(){
   Raycast ray(camera, camera.getProjMatrix());
 
   unsigned int b_VBO, b_VAO; //these are used to render only verticies of selected block.
+  glGenVertexArrays(1, &b_VAO);
+  glGenBuffers(1, &b_VBO);
+  
   //Our main game loop
 while (!glfwWindowShouldClose(window)) {
     // Get current time and calculate the time difference
@@ -86,10 +89,6 @@ while (!glfwWindowShouldClose(window)) {
     // Clear the screen
     glClearColor(0.4745f, 0.651f, 1.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
- 
-    //outlineing test code
-    glStencilFunc(GL_ALWAYS, 1, 0xFF);
-    glStencilMask(0xFF);
 
     // Update dt and process input
     processInput(window, static_cast<float>(timeDiff));
@@ -115,13 +114,28 @@ while (!glfwWindowShouldClose(window)) {
     chunkManager.drawChunks();
 
     glm::ivec3 voxel = chunkManager.mouseVoxel(ray, camera);
+    std::vector<float> selectedBlockVertices;
     if(voxel.x != -1 && voxel.y != -1 && voxel.z != -1){
-      std::vector<float> selectedBlockVertices = chunkManager.fetchBlockFromChunk(voxel);
+      selectedBlockVertices = chunkManager.fetchBlockFromChunk(voxel);
+      if (!selectedBlockVertices.empty()) {
+        std::cout << "LOOKING AT A BLOCK!" << std::endl;
+        glBindVertexArray(b_VAO);
+
+        glBindBuffer(GL_ARRAY_BUFFER, b_VBO);
+        glBufferData(GL_ARRAY_BUFFER, selectedBlockVertices.size() * sizeof(float), selectedBlockVertices.data(), GL_STATIC_DRAW);
+
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+        glEnableVertexAttribArray(0);
+
+        glBindVertexArray(0); // Unbind the VAO
+      }
     }
 
     ray.update(camera.GetViewMatrix(), projection);
     
     glm::vec3 cameraWorldPos = camera.getCameraWorldPosition();
+  
+    shader.use();
 
     glDisable(GL_DEPTH_TEST);
     font.RenderText(FPS + " fps", 10.0f, SCR_HEIGHT-20.0f, 0.5f, glm::vec3(1.0f, 1.0f, 1.0f));
@@ -130,6 +144,29 @@ while (!glfwWindowShouldClose(window)) {
     font.RenderText(std::to_string(ray.getCurrentRay().x) + ", " + std::to_string(ray.getCurrentRay().y) + ", " + std::to_string(ray.getCurrentRay().z), 10.0f, SCR_HEIGHT - 80.0f, 0.5f, glm::vec3(1.0f, 1.0f, 1.0f));
     font.RenderText(std::to_string(voxel.x) + ", " + std::to_string(voxel.y) + ", " + std::to_string(voxel.z), 10.0f, SCR_HEIGHT - 110.0f, 0.5f, glm::vec3(1.0f, 1.0f, 1.0f));
     glEnable(GL_DEPTH_TEST);
+
+    if (!selectedBlockVertices.empty()) {
+      outlineShader.use();
+
+      int modelLoc = glGetUniformLocation(outlineShader.ID, "model");
+      glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+
+      int viewLoc = glGetUniformLocation(outlineShader.ID, "view");
+      glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
+      
+      int projLoc = glGetUniformLocation(outlineShader.ID, "projection");
+      glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
+
+      glBindVertexArray(b_VAO);
+      glDisable(GL_DEPTH_TEST);
+      glDrawArrays(GL_TRIANGLES, 0, selectedBlockVertices.size());
+      glEnable(GL_DEPTH_TEST);
+
+      glGetError();
+
+      //drew block
+      glBindVertexArray(0);
+    }
 
     // Swap buffers and poll events
     glfwSwapBuffers(window);

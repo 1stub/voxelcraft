@@ -19,19 +19,15 @@ bool chunkManager::blockExists(int x, int y, int z) const {
 
 std::vector<float> chunkManager::fetchBlockFromChunk(glm::ivec3 blockCoords){
     glm::ivec2 chunkCoords(blockCoords.x / 16, blockCoords.z / 16); // hard coded for now, 16 is our chunk size
-    Chunk c = fetchChunk(chunkCoords);
-    auto blockIt = c.blocks.find(blockCoords);
+    auto blockIt = chunks[chunkCoords]->blocks.find(blockCoords);
 
-    if (blockIt != c.blocks.end() && blockIt->second) {
+    if (blockIt != chunks[chunkCoords]->blocks.end() && blockIt->second) {
         return blockIt->second->vertices;
     } else {
+        std::cerr << "Chunk not found at coordinates: " << chunkCoords.x << ", " << chunkCoords.y << std::endl;
         std::cerr << "Block not found at coordinates: " << blockCoords.x << ", " << blockCoords.y << ", " << blockCoords.z << std::endl;
         return std::vector<float>(); // return an empty vector or handle the error as needed
     }
-}
-
-Chunk chunkManager::fetchChunk(glm::ivec2 chunkCoords){
-  return *chunks[chunkCoords]; 
 }
 
 glm::vec3 chunkManager::mouseVoxel(Raycast &ray, Camera &camera) {
