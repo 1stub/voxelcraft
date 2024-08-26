@@ -6,14 +6,14 @@ Chunk::Chunk(int xOff, int zOff, const siv::PerlinNoise &p) : xOffset(xOff), zOf
   //set blocks
   generateHeightMap(p);
   setBlockTexture();
-  for(int x = 0; x < chunkSize; x++){
-    for(int z = 0; z < chunkSize; z++){
+  for(int x = 0; x < Chunks::size; x++){
+    for(int z = 0; z < Chunks::size; z++){
       double noiseValue = getNoiseValue(p, x, z);
-      int height = static_cast<int>(noiseValue) + chunkSize;
-      for(int y = 0; y < chunkHeight; y++){
+      int height = static_cast<int>(noiseValue) + Chunks::size;
+      for(int y = 0; y < Chunks::height; y++){
         if (voxelGrid[x+1][y][z+1] == 1) {
           //our block position
-          glm::ivec3 bPos((xOffset * chunkSize) + x, y, (zOffset * chunkSize) + z);
+          glm::ivec3 bPos((xOffset * Chunks::size) + x, y, (zOffset * Chunks::size) + z);
           
           //stores a vector containing integers corresponding to face to draw
           std::vector<int>faces = checkNeighbors(x + 1, y, z + 1);
@@ -34,15 +34,15 @@ Chunk::Chunk(int xOff, int zOff, const siv::PerlinNoise &p) : xOffset(xOff), zOf
 //This creates a heightmap we use to check adjacent blocks
 //created padding around map to allow for adjacent blocks in other chunks to be visible for determinng renderd faces
 double Chunk::getNoiseValue(const siv::PerlinNoise &p, int x, int z) {
-    return p.normalizedOctave2D_01(((xOffset * chunkSize) + x) * frequency, ((zOffset * chunkSize) + z) * frequency, octaves, persistence) * (double)25;
+    return p.normalizedOctave2D_01(((xOffset * Chunks::size) + x) * frequency, ((zOffset * Chunks::size) + z) * frequency, octaves, persistence) * (double)25;
 }
 
 void Chunk::generateHeightMap(const siv::PerlinNoise &p){
-    for(int x = -1; x < chunkSize + 1; x++){
-        for(int z = -1; z < chunkSize + 1; z++){
+    for(int x = -1; x < Chunks::size + 1; x++){
+        for(int z = -1; z < Chunks::size + 1; z++){
             double noiseValue = getNoiseValue(p, x, z);
-            int height = static_cast<int>(noiseValue) + chunkSize;
-            for(int y = 0; y < chunkHeight; y++){
+            int height = static_cast<int>(noiseValue) + Chunks::size;
+            for(int y = 0; y < Chunks::height; y++){
                 voxelGrid[x+1][y][z+1] = (y < height) ? 1 : 0;
             }
         }
@@ -165,18 +165,9 @@ std::vector<int> Chunk::checkNeighbors(int x, int y, int z) {
     // Helper lambda to check if the block is air (or not solid)
     auto isAir = [&](int x, int y, int z) -> bool {
         // Check if coordinates are within the chunk
-        if (x >= 0 && x < chunkSize + 2 && z >= 0 && z < chunkSize + 2 && y > 0 && y < chunkHeight) {
+        if (x >= 0 && x < Chunks::size + 2 && z >= 0 && z < Chunks::size + 2 && y > 0 && y < Chunks::height) {
             return voxelGrid[x][y][z] == 0;
         }
-        // If out of bounds, check neighboring chunks (this part depends on how you store/access neighboring chunks)
-        // For example:
-        // if (x < 0) return getNeighboringChunk(LEFT)->isAir(x + chunkSize, y, z);
-        // if (x >= chunkSize + 2) return getNeighboringChunk(RIGHT)->isAir(x - chunkSize, y, z);
-        // if (z < 0) return getNeighboringChunk(FRONT)->isAir(x, y, z + chunkSize);
-        // if (z >= chunkSize + 2) return getNeighboringChunk(BACK)->isAir(x, y, z - chunkSize);
-
-        // for this program I am not accessing neigboring chunks but rather storing padding around my voxel map.
-
         return false;  // Assume out of bounds means air
     };
 

@@ -116,7 +116,7 @@ public:
     }
 
     glm::vec3 getCameraWorldPosition(){
-      return glm::vec3(glm::floor((int)Position.x), glm::floor((int)Position.y), glm::floor((int)Position.z));
+      return Position;
     }
 
 private:

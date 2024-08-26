@@ -7,6 +7,7 @@
 #include <map>
 #include <memory>
 
+#include "globals.h"
 #include "camera.h"
 #include "block.h"
 #include "shader.h"
@@ -53,11 +54,9 @@ class Chunk{
     std::unordered_map<glm::ivec3, std::shared_ptr<Block>, Comp_ivec3, Comp_ivec3> blocks; 
   private:
     unsigned int VBO, VAO;
-    int chunkSize = 16;
-    int chunkHeight = 256;
     int xOffset;
     int zOffset;
-    unsigned char voxelGrid[16+2][256][16+2]; //+2 for padding
+    unsigned char voxelGrid[Chunks::size+2][Chunks::height][Chunks::size+2]; //+2 for padding
     unsigned int texture;
     float verticeCount = 0;
     blockTexCoords blockTextures[4]; 
@@ -67,6 +66,7 @@ class Chunk{
     float persistence = 0.5;
     float frequency = 0.01;
 
+    //thinking it would be smarter to define texture coords seperate
   std::vector<std::vector<float>> frontFace = {
       { 0.5f,  0.5f, -0.5f, 1.0f, 1.0f},
       {-0.5f,  0.5f, -0.5f, 0.0f, 1.0f},

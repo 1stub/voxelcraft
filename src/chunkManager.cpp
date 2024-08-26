@@ -1,8 +1,8 @@
 #include "chunkManager.h"
 
 chunkManager::chunkManager(){
-  for(int i = -renderDistance; i < renderDistance; i++){
-    for(int j = -renderDistance; j < renderDistance; j++){
+  for(int i = -Render::renderDistance; i < Render::renderDistance; i++){
+    for(int j = -Render::renderDistance; j < Render::renderDistance; j++){
       glm::ivec2 chunkPos(i,j);
       chunks.emplace(chunkPos, std::make_unique<Chunk>(i, j, p));
       for(auto &b : chunks[chunkPos]->getBlocks()){
@@ -18,7 +18,7 @@ bool chunkManager::blockExists(int x, int y, int z) const {
 }
 
 std::vector<float> chunkManager::fetchBlockFromChunk(glm::ivec3 blockCoords){
-    glm::ivec2 chunkCoords(blockCoords.x / 16, blockCoords.z / 16); // hard coded for now, 16 is our chunk size
+    glm::ivec2 chunkCoords(blockCoords.x / Chunks::size, blockCoords.z / Chunks::size); // hard coded for now, 16 is our chunk size
     auto blockIt = chunks[chunkCoords]->blocks.find(blockCoords);
 
     if (blockIt != chunks[chunkCoords]->blocks.end() && blockIt->second) {
@@ -30,6 +30,7 @@ std::vector<float> chunkManager::fetchBlockFromChunk(glm::ivec3 blockCoords){
     }
 }
 
+//looks as though there are still issues with negative coordinates
 glm::vec3 chunkManager::mouseVoxel(Raycast &ray, Camera &camera) {
     using namespace glm;
     

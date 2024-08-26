@@ -1,6 +1,7 @@
 #ifndef CHUNK_MANAGER_H
 #define CHUNK_MANAGER_H
 
+#include "globals.h"
 #include "chunk.h"
 #include <unordered_set>
 #include <unordered_map>
@@ -47,7 +48,6 @@ class chunkManager{
     glm::vec3 mouseVoxel(Raycast &ray, Camera &camera);
     void drawChunks();
   private:
-    int renderDistance = 5;
     const siv::PerlinNoise p;
     std::unordered_map<glm::ivec2, std::unique_ptr<Chunk>, Comp_ivec2, Comp_ivec2> chunks;
     std::unordered_set<BlockCoord> blockManager; //just to check if a block exists
