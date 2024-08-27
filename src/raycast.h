@@ -8,10 +8,6 @@
 //for now this will just print the world coord we are looking at and do nothing with it
 //likely will just send this info over to the chunk manager once i determine what chunk we are in
 
-//really these should exist globally to all files, not maintainable
-const unsigned int SCR_WIDTH = 1600;
-const unsigned int SCR_HEIGHT = 900;
-
 //the goat - https://www.youtube.com/watch?v=DLKN0jExRIM
 class Raycast{
   public:

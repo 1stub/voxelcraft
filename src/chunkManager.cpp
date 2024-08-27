@@ -1,4 +1,5 @@
 #include "chunkManager.h"
+#include <float.h>
 
 chunkManager::chunkManager(){
   for(int i = -Render::renderDistance; i < Render::renderDistance; i++){
@@ -30,89 +31,80 @@ std::vector<float> chunkManager::fetchBlockFromChunk(glm::ivec3 blockCoords){
     }
 }
 
-//looks as though there are still issues with negative coordinates
+//https://github.com/rhysboer/VoxitCraft/blob/master/Minecraft/Raycast.cpp
+//code slightly modified from above ^, could not figure out implemntation on my own
 glm::vec3 chunkManager::mouseVoxel(Raycast &ray, Camera &camera) {
     using namespace glm;
-    
-    // Retrieve the ray in world space
-    vec3 rayWOR = ray.getCurrentRay();
-    
-    // Camera position
-    vec3 camPos = camera.getCameraWorldPosition();
-    
-    // Voxel grid position
-    int xPos = static_cast<int>(floor(camPos.x));
-    int yPos = static_cast<int>(floor(camPos.y));
-    int zPos = static_cast<int>(floor(camPos.z));
-    
+
+    float distance = 100.0f;
+    float cellSize = 1.0f;
+
+    vec3 rayWOR = ray.getCurrentRay(); //normalized direction vector
+    vec3 startPoint = camera.getCameraWorldPosition();
+    vec3 endPoint = startPoint + (rayWOR * distance);
+
+    vec3 startCell = floor(startPoint);
+    vec3 endCell = floor(endPoint);
+
+    vec3 direction = endPoint - startPoint;
+    vec3 norm_direction = normalize(direction);
+
     // Determine the step direction for raycasting
     int stepX = sign(rayWOR.x);
     int stepY = sign(rayWOR.y);
     int stepZ = sign(rayWOR.z);
-    
-    // Compute tMax and tDelta for ray stepping
-    vec3 tMax(
-        (stepX > 0 ? (xPos + 1 - camPos.x) : (camPos.x - xPos)) / rayWOR.x,
-        (stepY > 0 ? (yPos + 1 - camPos.y) : (camPos.y - yPos)) / rayWOR.y,
-        (stepZ > 0 ? (zPos + 1 - camPos.z) : (camPos.z - zPos)) / rayWOR.z
-    );
-    
-    vec3 tDelta(
-        std::abs(1.0f / rayWOR.x),
-        std::abs(1.0f / rayWOR.y),
-        std::abs(1.0f / rayWOR.z)
-    );
-    
-    // Variables to determine which face of the voxel is hit
-    float faceX = 0, faceY = 0, faceZ = 0;
-    
-    // Main raycasting loop
-    float range = 1000.0f; // Max range to check
-    while (tMax.x < range && tMax.y < range && tMax.z < range) {
-      //need to see if a block exists at these coordinates
-        if (blockExists(xPos, yPos, zPos)) {
-            // Return the coordinates of the intersected voxel
-            return vec3(xPos, yPos, zPos);
-        }
-        
-        // Determine the voxel face to step into
-        if (tMax.x < tMax.y) {
-            if (tMax.x < tMax.z) {
-                if (tMax.x > range) break;
-                xPos += stepX;
-                tMax.x += tDelta.x;
-                faceX = -stepX;
-                faceY = 0;
-                faceZ = 0;
-            } else {
-                if (tMax.z > range) break;
-                zPos += stepZ;
-                tMax.z += tDelta.z;
-                faceX = 0;
-                faceY = 0;
-                faceZ = -stepZ;
-            }
+
+    // Determine the step direction for raycasting
+    // Distance to nearest square side
+    double near_x = (stepX >= 0) ? ((startCell.x + 1) * cellSize - startPoint.x) : (startPoint.x - (startCell.x * cellSize)) ;
+    double near_y = (stepY >= 0) ? ((startCell.y + 1) * cellSize - startPoint.y) : (startPoint.y - (startCell.y * cellSize)) ;
+    double near_z = (stepZ >= 0) ? ((startCell.z + 1) * cellSize - startPoint.z) : (startPoint.z - (startCell.z * cellSize)) ;
+
+    double maxX = (norm_direction.x != 0) ? near_x / norm_direction.x : DBL_MAX;
+    double maxY = (norm_direction.y != 0) ? near_y / norm_direction.y : DBL_MAX;
+    double masZ = (norm_direction.z != 0) ? near_z / norm_direction.z : DBL_MAX;
+
+    double dx = (norm_direction.x != 0) ? cellSize / norm_direction.x : DBL_MAX;
+    double dy = (norm_direction.y != 0) ? cellSize / norm_direction.y : DBL_MAX;
+    double dz = (norm_direction.z != 0) ? cellSize / norm_direction.z : DBL_MAX;
+
+    vec3 pos = startPoint; 
+
+    int gridBoundX = std::abs(endCell.x - startCell.x);
+    int gridBoundY = std::abs(endCell.y - startCell.y);
+    int gridBoundZ = std::abs(endCell.z - startCell.z);
+
+    int counter = 0;
+
+    while(counter != (gridBoundX + gridBoundY + gridBoundZ)) {
+      if(std::abs(maxX) < std::abs(maxY)) {
+        if(std::abs(maxX) < std::abs(masZ)) {
+          maxX += dx;
+          pos.x += stepX;
         } else {
-            if (tMax.y < tMax.z) {
-                if (tMax.y > range) break;
-                yPos += stepY;
-                tMax.y += tDelta.y;
-                faceX = 0;
-                faceY = -stepY;
-                faceZ = 0;
-            } else {
-                if (tMax.z > range) break;
-                zPos += stepZ;
-                tMax.z += tDelta.z;
-                faceX = 0;
-                faceY = 0;
-                faceZ = -stepZ;
-            }
+          masZ += dz;
+          pos.z += stepZ;
         }
+      } else {
+        if(std::abs(maxY) < std::abs(masZ)) {
+          maxY += dy;
+          pos.y += stepY;
+        } else {
+          masZ += dz;
+          pos.z += stepZ;
+        }
+      }
+ 
+      if(pos.y < 0)
+        break;
+
+      if(blockExists(pos.x, pos.y, pos.z)) {
+        return pos;
+      }
+      ++counter;
     }
-    
-    // Return a vec3 indicating no intersection (optional, could be a sentinel value)
-    return vec3(-1.0f, -1.0f, -1.0f);
+
+    return vec3(0.0, -1.0, 0.0);
 }
 
 void chunkManager::drawChunks(){

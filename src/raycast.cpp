@@ -11,7 +11,7 @@ glm::vec3 Raycast::getCurrentRay(){
 
 void Raycast::update(const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix) {
     this->viewMatrix = camera->GetViewMatrix();
-    this->projectionMatrix = camera->getProjMatrix();
+    //this->projectionMatrix = camera->getProjMatrix();
     currentRay = calculateMouseRay();
 }
 glm::vec3 Raycast::calculateMouseRay(){
@@ -26,7 +26,7 @@ glm::vec3 Raycast::toWorldCoords(glm::vec4 eyeCoords){
   glm::mat4 invertedView = glm::inverse(viewMatrix);
   glm::vec4 rayWorld = invertedView * eyeCoords;
   glm::vec3 mouseRay = glm::normalize(glm::vec3(rayWorld.x, rayWorld.y, rayWorld.z));
-  return rayWorld;
+  return mouseRay;
 }
 
 glm::vec4 Raycast::toEyeCoords(glm::vec4 clipCoords){
@@ -40,13 +40,13 @@ glm::vec3 Raycast::convertWorldToBlockCoords(const glm::vec3& worldCoords, const
 }
 
 glm::vec2 Raycast::getNormalizedDeviceCoords() {
-    float centerX = SCR_WIDTH / 2.0f;
-    float centerY = SCR_HEIGHT / 2.0f;
+    float centerX = Screen::width / 2.0f;
+    float centerY = Screen::height / 2.0f;
 
     // our "mouse" is always center of screen:
     glm::vec2 coords;
-    coords.x = (2.0f * centerX) / SCR_WIDTH - 1.0f;
-    coords.y = -((2.0f * centerY) / SCR_HEIGHT - 1.0f);
+    coords.x = (2.0f * centerX) / Screen::width - 1.0f;
+    coords.y = -((2.0f * centerY) / Screen::height - 1.0f);
     return coords;
 }
 

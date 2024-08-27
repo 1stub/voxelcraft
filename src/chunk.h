@@ -67,59 +67,60 @@ class Chunk{
     float frequency = 0.01;
 
     //thinking it would be smarter to define texture coords seperate
-  std::vector<std::vector<float>> frontFace = {
-      { 0.5f,  0.5f, -0.5f, 1.0f, 1.0f},
-      {-0.5f,  0.5f, -0.5f, 0.0f, 1.0f},
-      {-0.5f, -0.5f, -0.5f, 0.0f, 0.0f},
-      {-0.5f, -0.5f, -0.5f, 0.0f, 0.0f},
-      { 0.5f, -0.5f, -0.5f, 1.0f, 0.0f},
-      { 0.5f,  0.5f, -0.5f, 1.0f, 1.0f},
-  };
+    //currently goes first 3 pos last 2 tex
+    std::vector<std::vector<float>> frontFace = {
+        {1.0f, 1.0f, 0.0f, 1.0f, 1.0f},
+        {0.0f, 1.0f, 0.0f, 0.0f, 1.0f},
+        {0.0f, 0.0f, 0.0f, 0.0f, 0.0f},
+        {0.0f, 0.0f, 0.0f, 0.0f, 0.0f},
+        {1.0f, 0.0f, 0.0f, 1.0f, 0.0f},
+        {1.0f, 1.0f, 0.0f, 1.0f, 1.0f},
+    };
 
-  std::vector<std::vector<float>> backFace = {
-      { 0.5f,  0.5f,  0.5f, 1.0f, 1.0f},
-      {-0.5f,  0.5f,  0.5f, 0.0f, 1.0f},
-      {-0.5f, -0.5f,  0.5f, 0.0f, 0.0f},
-      {-0.5f, -0.5f,  0.5f, 0.0f, 0.0f},
-      { 0.5f, -0.5f,  0.5f, 1.0f, 0.0f},
-      { 0.5f,  0.5f,  0.5f, 1.0f, 1.0f}
-  };
+    std::vector<std::vector<float>> backFace = {
+        {1.0f, 1.0f, 1.0f, 1.0f, 1.0f},
+        {0.0f, 1.0f, 1.0f, 0.0f, 1.0f},
+        {0.0f, 0.0f, 1.0f, 0.0f, 0.0f},
+        {0.0f, 0.0f, 1.0f, 0.0f, 0.0f},
+        {1.0f, 0.0f, 1.0f, 1.0f, 0.0f},
+        {1.0f, 1.0f, 1.0f, 1.0f, 1.0f},
+    };
 
-  std::vector<std::vector<float>> leftFace = {
-      {-0.5f,  0.5f,  0.5f, 1.0f, 0.0f},
-      {-0.5f,  0.5f, -0.5f, 1.0f, 1.0f},
-      {-0.5f, -0.5f, -0.5f, 0.0f, 1.0f},
-      {-0.5f, -0.5f, -0.5f, 0.0f, 1.0f},
-      {-0.5f, -0.5f,  0.5f, 0.0f, 0.0f},
-      {-0.5f,  0.5f,  0.5f, 1.0f, 0.0f}
-  };
+    std::vector<std::vector<float>> leftFace = {
+        {0.0f, 1.0f, 1.0f, 1.0f, 0.0f},
+        {0.0f, 1.0f, 0.0f, 1.0f, 1.0f},
+        {0.0f, 0.0f, 0.0f, 0.0f, 1.0f},
+        {0.0f, 0.0f, 0.0f, 0.0f, 1.0f},
+        {0.0f, 0.0f, 1.0f, 0.0f, 0.0f},
+        {0.0f, 1.0f, 1.0f, 1.0f, 0.0f},
+    };
 
-  std::vector<std::vector<float>> rightFace = {
-      { 0.5f,  0.5f,  0.5f, 1.0f, 0.0f},
-      { 0.5f,  0.5f, -0.5f, 1.0f, 1.0f},
-      { 0.5f, -0.5f, -0.5f, 0.0f, 1.0f},
-      { 0.5f, -0.5f, -0.5f, 0.0f, 1.0f},
-      { 0.5f, -0.5f,  0.5f, 0.0f, 0.0f},
-      { 0.5f,  0.5f,  0.5f, 1.0f, 0.0f}
-  };
+    std::vector<std::vector<float>> rightFace = {
+        {1.0f, 1.0f, 1.0f, 1.0f, 0.0f},
+        {1.0f, 1.0f, 0.0f, 1.0f, 1.0f},
+        {1.0f, 0.0f, 0.0f, 0.0f, 1.0f},
+        {1.0f, 0.0f, 0.0f, 0.0f, 1.0f},
+        {1.0f, 0.0f, 1.0f, 0.0f, 0.0f},
+        {1.0f, 1.0f, 1.0f, 1.0f, 0.0f},
+    };
 
-  std::vector<std::vector<float>> bottomFace = {
-      {-0.5f, -0.5f, -0.5f, 0.0f, 1.0f},
-      { 0.5f, -0.5f, -0.5f, 1.0f, 1.0f},
-      { 0.5f, -0.5f,  0.5f, 1.0f, 0.0f},
-      { 0.5f, -0.5f,  0.5f, 1.0f, 0.0f},
-      {-0.5f, -0.5f,  0.5f, 0.0f, 0.0f},
-      {-0.5f, -0.5f, -0.5f, 0.0f, 1.0f}
-  };
+    std::vector<std::vector<float>> bottomFace = {
+        {0.0f, 0.0f, 0.0f, 0.0f, 1.0f},
+        {1.0f, 0.0f, 0.0f, 1.0f, 1.0f},
+        {1.0f, 0.0f, 1.0f, 1.0f, 0.0f},
+        {1.0f, 0.0f, 1.0f, 1.0f, 0.0f},
+        {0.0f, 0.0f, 1.0f, 0.0f, 0.0f},
+        {0.0f, 0.0f, 0.0f, 0.0f, 1.0f},
+    };
 
-  std::vector<std::vector<float>> topFace = {
-      {-0.5f,  0.5f, -0.5f, 0.0f, 1.0f},
-      { 0.5f,  0.5f, -0.5f, 1.0f, 1.0f},
-      { 0.5f,  0.5f,  0.5f, 1.0f, 0.0f},
-      { 0.5f,  0.5f,  0.5f, 1.0f, 0.0f},
-      {-0.5f,  0.5f,  0.5f, 0.0f, 0.0f},
-      {-0.5f,  0.5f, -0.5f, 0.0f, 1.0f}
-  };
+    std::vector<std::vector<float>> topFace = {
+        {0.0f, 1.0f, 0.0f, 0.0f, 1.0f},
+        {1.0f, 1.0f, 0.0f, 1.0f, 1.0f},
+        {1.0f, 1.0f, 1.0f, 1.0f, 0.0f},
+        {1.0f, 1.0f, 1.0f, 1.0f, 0.0f},
+        {0.0f, 1.0f, 1.0f, 0.0f, 0.0f},
+        {0.0f, 1.0f, 0.0f, 0.0f, 1.0f},
+    };
 };
 
 #endif

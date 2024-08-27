@@ -24,7 +24,7 @@ int main(){
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
   //glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
   
-  GLFWwindow *window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "OpenGL Test", NULL, NULL);
+  GLFWwindow *window = glfwCreateWindow(Screen::width, Screen::height, "OpenGL Test", NULL, NULL);
   if (window == NULL)
   {
     std::cout << "Failed to create GLFW window" << std::endl;
@@ -97,10 +97,10 @@ while (!glfwWindowShouldClose(window)) {
     shader.use();
 
     glm::mat4 model = glm::mat4(1.0f);
-    model = glm::rotate(model, glm::radians(0.0f), glm::vec3(0.5f, 1.0f, 0.0f)); 
+    model = glm::rotate(model, glm::radians(0.0f), glm::vec3(1.0f, 1.0f, 1.0f)); 
 
     glm::mat4 view = camera.GetViewMatrix();
-    glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), ((float)SCR_WIDTH / (float)SCR_HEIGHT), 0.1f, 100.0f);
+    glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (Screen::width / Screen::height), 0.1f, 100.0f);
 
     int modelLoc = glGetUniformLocation(shader.ID, "model");
     glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
@@ -114,18 +114,18 @@ while (!glfwWindowShouldClose(window)) {
     chunkManager.drawChunks();
 
     glm::ivec3 voxel = chunkManager.mouseVoxel(ray, camera);
-    ray.update(camera.GetViewMatrix(), projection);
+    ray.update(camera.GetViewMatrix(), camera.getProjMatrix());
     glm::vec3 cameraWorldPos = camera.getCameraWorldPosition();
   
     shader.use();
 
     //text rendering
     glDisable(GL_DEPTH_TEST);
-    font.RenderText(FPS + " fps", 10.0f, SCR_HEIGHT-20.0f, 0.5f, glm::vec3(1.0f, 1.0f, 1.0f));
-    font.RenderText("+", SCR_WIDTH/2.0f, SCR_HEIGHT/2.0f, 0.5f, glm::vec3(1.0f, 1.0f, 1.0f));
-    font.RenderText(std::to_string(cameraWorldPos.x) + ", " + std::to_string(cameraWorldPos.y) + ", " + std::to_string(cameraWorldPos.z), 10.0f, SCR_HEIGHT - 50.0f, 0.5f, glm::vec3(1.0f, 1.0f, 1.0f));
-    font.RenderText(std::to_string(ray.getCurrentRay().x) + ", " + std::to_string(ray.getCurrentRay().y) + ", " + std::to_string(ray.getCurrentRay().z), 10.0f, SCR_HEIGHT - 80.0f, 0.5f, glm::vec3(1.0f, 1.0f, 1.0f));
-    font.RenderText(std::to_string(voxel.x) + ", " + std::to_string(voxel.y) + ", " + std::to_string(voxel.z), 10.0f, SCR_HEIGHT - 110.0f, 0.5f, glm::vec3(1.0f, 1.0f, 1.0f));
+    font.RenderText(FPS + " fps", 10.0f, Screen::height-20.0f, 0.5f, glm::vec3(1.0f, 1.0f, 1.0f));
+    font.RenderText("+", Screen::width/2.0f, Screen::height/2.0f, 0.5f, glm::vec3(1.0f, 1.0f, 1.0f));
+    font.RenderText(std::to_string(cameraWorldPos.x) + ", " + std::to_string(cameraWorldPos.y) + ", " + std::to_string(cameraWorldPos.z), 10.0f, Screen::height - 50.0f, 0.5f, glm::vec3(1.0f, 1.0f, 1.0f));
+    font.RenderText(std::to_string(ray.getCurrentRay().x) + ", " + std::to_string(ray.getCurrentRay().y) + ", " + std::to_string(ray.getCurrentRay().z), 10.0f, Screen::height - 80.0f, 0.5f, glm::vec3(1.0f, 1.0f, 1.0f));
+    font.RenderText(std::to_string(voxel.x) + ", " + std::to_string(voxel.y) + ", " + std::to_string(voxel.z), 10.0f, Screen::height - 110.0f, 0.5f, glm::vec3(1.0f, 1.0f, 1.0f));
     glEnable(GL_DEPTH_TEST);
 
 
@@ -172,8 +172,8 @@ void processInput(GLFWwindow *window, float deltaTime){
 }
 
 void MouseCallback(GLFWwindow *window, double xpos, double ypos) {
-    static float lastX = SCR_WIDTH / 2.0f;
-    static float lastY = SCR_HEIGHT / 2.0f;
+    static float lastX = Screen::width / 2.0f;
+    static float lastY = Screen::height / 2.0f;
     float xoffset = xpos - lastX;
     float yoffset = lastY - ypos;  // Reversed since y-coordinates go from bottom to top
 

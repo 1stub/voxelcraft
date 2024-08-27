@@ -14,8 +14,8 @@ namespace Render{
 }
 
 namespace Screen{ // 1600 x 900 px window
-  const int width = 1600;
-  const int height = 900;
+  const float width = 1600;
+  const float height = 900;
 }
 
 #endif
