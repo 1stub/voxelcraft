@@ -14,7 +14,7 @@ chunkManager::chunkManager(){
 }
 
 bool chunkManager::blockExists(int x, int y, int z) const {
-    BlockCoord coord = {x, y, z};
+    BlockCoord coord = {x - 1, y, z - 1};
     return blockManager.find(coord) != blockManager.end();
 }
 
