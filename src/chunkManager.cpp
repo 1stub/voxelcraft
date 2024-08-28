@@ -14,7 +14,7 @@ chunkManager::chunkManager(){
 }
 
 bool chunkManager::blockExists(int x, int y, int z) const {
-    BlockCoord coord = {x - 1, y, z - 1};
+    BlockCoord coord = {x, y, z};
     return blockManager.find(coord) != blockManager.end();
 }
 
@@ -41,10 +41,11 @@ glm::vec3 chunkManager::mouseVoxel(Raycast &ray, Camera &camera) {
 
     vec3 rayWOR = ray.getCurrentRay(); //normalized direction vector
     vec3 startPoint = camera.getCameraWorldPosition();
+
     vec3 endPoint = startPoint + (rayWOR * distance);
 
-    vec3 startCell = floor(startPoint);
-    vec3 endCell = floor(endPoint);
+    vec3 startCell (startPoint.x < 0.0f ? ceil(startPoint.x) : floor(startPoint.x), startPoint.y < 0.0f ? ceil(startPoint.y) : floor(startPoint.y), startPoint.z < 0.0f ? ceil(startPoint.z) : floor(startPoint.z));
+    vec3 endCell ( (rayWOR.x < 0.0f) ? ceil(rayWOR.x) : floor(rayWOR.x), (rayWOR.y < 0.0f) ? ceil(rayWOR.y) : floor(rayWOR.y), (rayWOR.z < 0.0f) ? ceil(rayWOR.z) : floor(rayWOR.z));
 
     vec3 direction = endPoint - startPoint;
     vec3 norm_direction = normalize(direction);
