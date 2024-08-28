@@ -45,7 +45,7 @@ glm::vec3 chunkManager::mouseVoxel(Raycast &ray, Camera &camera) {
     vec3 endPoint = startPoint + (rayWOR * distance);
 
     vec3 startCell (startPoint.x < 0.0f ? ceil(startPoint.x) : floor(startPoint.x), startPoint.y < 0.0f ? ceil(startPoint.y) : floor(startPoint.y), startPoint.z < 0.0f ? ceil(startPoint.z) : floor(startPoint.z));
-    vec3 endCell ( (rayWOR.x < 0.0f) ? ceil(rayWOR.x) : floor(rayWOR.x), (rayWOR.y < 0.0f) ? ceil(rayWOR.y) : floor(rayWOR.y), (rayWOR.z < 0.0f) ? ceil(rayWOR.z) : floor(rayWOR.z));
+    vec3 endCell ( (endPoint.x < 0.0f) ? ceil(endPoint.x) : floor(endPoint.x), (endPoint.y < 0.0f) ? ceil(endPoint.y) : floor(endPoint.y), (endPoint.z < 0.0f) ? ceil(endPoint.z) : floor(endPoint.z));
 
     vec3 direction = endPoint - startPoint;
     vec3 norm_direction = normalize(direction);
@@ -57,17 +57,17 @@ glm::vec3 chunkManager::mouseVoxel(Raycast &ray, Camera &camera) {
 
     // Determine the step direction for raycasting
     // Distance to nearest square side
-    double near_x = (stepX >= 0) ? ((startCell.x + 1) * cellSize - startPoint.x) : (startPoint.x - (startCell.x * cellSize)) ;
-    double near_y = (stepY >= 0) ? ((startCell.y + 1) * cellSize - startPoint.y) : (startPoint.y - (startCell.y * cellSize)) ;
-    double near_z = (stepZ >= 0) ? ((startCell.z + 1) * cellSize - startPoint.z) : (startPoint.z - (startCell.z * cellSize)) ;
+    float near_x = (stepX >= 0) ? ((startCell.x + 1) * cellSize - startPoint.x) : (startPoint.x - (startCell.x * cellSize)) ;
+    float near_y = (stepY >= 0) ? ((startCell.y + 1) * cellSize - startPoint.y) : (startPoint.y - (startCell.y * cellSize)) ;
+    float near_z = (stepZ >= 0) ? ((startCell.z + 1) * cellSize - startPoint.z) : (startPoint.z - (startCell.z * cellSize)) ;
 
-    double maxX = (norm_direction.x != 0) ? near_x / norm_direction.x : DBL_MAX;
-    double maxY = (norm_direction.y != 0) ? near_y / norm_direction.y : DBL_MAX;
-    double masZ = (norm_direction.z != 0) ? near_z / norm_direction.z : DBL_MAX;
+    float maxX = (norm_direction.x != 0) ? near_x / norm_direction.x : DBL_MAX;
+    float maxY = (norm_direction.y != 0) ? near_y / norm_direction.y : DBL_MAX;
+    float masZ = (norm_direction.z != 0) ? near_z / norm_direction.z : DBL_MAX;
 
-    double dx = (norm_direction.x != 0) ? cellSize / norm_direction.x : DBL_MAX;
-    double dy = (norm_direction.y != 0) ? cellSize / norm_direction.y : DBL_MAX;
-    double dz = (norm_direction.z != 0) ? cellSize / norm_direction.z : DBL_MAX;
+    float dx = (norm_direction.x != 0) ? cellSize / norm_direction.x : DBL_MAX;
+    float dy = (norm_direction.y != 0) ? cellSize / norm_direction.y : DBL_MAX;
+    float dz = (norm_direction.z != 0) ? cellSize / norm_direction.z : DBL_MAX;
 
     vec3 pos = startPoint; 
 
