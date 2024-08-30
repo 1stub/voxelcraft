@@ -43,7 +43,7 @@ class chunkManager{
     void initChunks();
     glm::vec3 checkRayAllChunks(Raycast &ray, Camera &camera);
     bool blockExists(int x, int y, int z) const;
-    std::vector<float> fetchBlockFromChunk(glm::ivec3 blockCoords);
+    std::pair<float*, int> fetchBlockFromChunk(glm::ivec3 blockCoords);
     std::unique_ptr<Chunk> fetchChunk(glm::ivec2 chunkCoords);
     glm::vec3 mouseVoxel(Raycast &ray, Camera &camera);
     void drawChunks();

@@ -18,16 +18,22 @@ bool chunkManager::blockExists(int x, int y, int z) const {
     return blockManager.find(coord) != blockManager.end();
 }
 
-std::vector<float> chunkManager::fetchBlockFromChunk(glm::ivec3 blockCoords){
-    glm::ivec2 chunkCoords(blockCoords.x / Chunks::size, blockCoords.z / Chunks::size); // hard coded for now, 16 is our chunk size
+std::pair<float*, int> chunkManager::fetchBlockFromChunk(glm::ivec3 blockCoords){      
+    glm::ivec2 chunkCoords(
+        blockCoords.x >= 0 ? blockCoords.x / Chunks::size : (blockCoords.x - Chunks::size + 1) / Chunks::size,
+        blockCoords.z >= 0 ? blockCoords.z / Chunks::size : (blockCoords.z - Chunks::size + 1) / Chunks::size
+    );
     auto blockIt = chunks[chunkCoords]->blocks.find(blockCoords);
 
     if (blockIt != chunks[chunkCoords]->blocks.end() && blockIt->second) {
-        return blockIt->second->vertices;
+        return {blockIt->second->vertices.data(), blockIt->second->vertices.size()};
+
+        std::cout << "Block found at coordinates: " << blockCoords.x << ", " << blockCoords.y << ", " << blockCoords.z << std::endl;
     } else {
+        std::vector<float> ret;
         std::cerr << "Chunk not found at coordinates: " << chunkCoords.x << ", " << chunkCoords.y << std::endl;
         std::cerr << "Block not found at coordinates: " << blockCoords.x << ", " << blockCoords.y << ", " << blockCoords.z << std::endl;
-        return std::vector<float>(); // return an empty vector or handle the error as needed
+        return {ret.data(), 0};// return an empty vector or handle the error as needed
     }
 }
 
@@ -36,16 +42,16 @@ std::vector<float> chunkManager::fetchBlockFromChunk(glm::ivec3 blockCoords){
 glm::vec3 chunkManager::mouseVoxel(Raycast &ray, Camera &camera) {
     using namespace glm;
 
-    float distance = 100.0f;
+    float distance = 10.0f;
     float cellSize = 1.0f;
 
-    vec3 rayWOR = ray.getCurrentRay(); //normalized direction vector
+    vec3 rayWOR = ray.getCurrentRay(); //normalized direction vector from ray (at enter of screen)
     vec3 startPoint = camera.getCameraWorldPosition();
 
     vec3 endPoint = startPoint + (rayWOR * distance);
 
-    vec3 startCell (startPoint.x < 0.0f ? ceil(startPoint.x) : floor(startPoint.x), startPoint.y < 0.0f ? ceil(startPoint.y) : floor(startPoint.y), startPoint.z < 0.0f ? ceil(startPoint.z) : floor(startPoint.z));
-    vec3 endCell ( (endPoint.x < 0.0f) ? ceil(endPoint.x) : floor(endPoint.x), (endPoint.y < 0.0f) ? ceil(endPoint.y) : floor(endPoint.y), (endPoint.z < 0.0f) ? ceil(endPoint.z) : floor(endPoint.z));
+    vec3 startCell (startPoint.x < 0.0f ? ceil(startPoint.x) : floor(startPoint.x), startPoint.y < 0.0f ? ceil(startPoint.y) : floor(startPoint.y) , startPoint.z < 0.0f ? ceil(startPoint.z) : floor(startPoint.z)); /*floor(startPoint)*/
+    vec3 endCell ( (endPoint.x < 0.0f) ? ceil(endPoint.x) : floor(endPoint.x), (endPoint.y < 0.0f) ? ceil(endPoint.y) : floor(endPoint.y) , (endPoint.z < 0.0f) ? ceil(endPoint.z) : floor(endPoint.z)); /*floor(endPoint)*/
 
     vec3 direction = endPoint - startPoint;
     vec3 norm_direction = normalize(direction);
@@ -61,13 +67,14 @@ glm::vec3 chunkManager::mouseVoxel(Raycast &ray, Camera &camera) {
     float near_y = (stepY >= 0) ? ((startCell.y + 1) * cellSize - startPoint.y) : (startPoint.y - (startCell.y * cellSize)) ;
     float near_z = (stepZ >= 0) ? ((startCell.z + 1) * cellSize - startPoint.z) : (startPoint.z - (startCell.z * cellSize)) ;
 
-    float maxX = (norm_direction.x != 0) ? near_x / norm_direction.x : DBL_MAX;
-    float maxY = (norm_direction.y != 0) ? near_y / norm_direction.y : DBL_MAX;
-    float masZ = (norm_direction.z != 0) ? near_z / norm_direction.z : DBL_MAX;
+    const float EPSILON = 1e-6f;
+    float maxX = (std::abs(norm_direction.x) > EPSILON) ? near_x / norm_direction.x : DBL_MAX;
+    float maxY = (std::abs(norm_direction.y) > EPSILON) ? near_y / norm_direction.y : DBL_MAX;
+    float masZ = (std::abs(norm_direction.z) > EPSILON) ? near_z / norm_direction.z : DBL_MAX;
 
-    float dx = (norm_direction.x != 0) ? cellSize / norm_direction.x : DBL_MAX;
-    float dy = (norm_direction.y != 0) ? cellSize / norm_direction.y : DBL_MAX;
-    float dz = (norm_direction.z != 0) ? cellSize / norm_direction.z : DBL_MAX;
+    float dx = (std::abs(norm_direction.x) > EPSILON) ? cellSize / norm_direction.x : DBL_MAX;
+    float dy = (std::abs(norm_direction.y) > EPSILON) ? cellSize / norm_direction.y : DBL_MAX;
+    float dz = (std::abs(norm_direction.z) > EPSILON) ? cellSize / norm_direction.z : DBL_MAX;
 
     vec3 pos = startPoint; 
 

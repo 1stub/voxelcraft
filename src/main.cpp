@@ -49,8 +49,8 @@ int main(){
   //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
   glEnable(GL_DEPTH_TEST);
   glEnable(GL_BLEND);
-  glEnable(GL_CULL_FACE);
-  glCullFace(GL_BACK);
+  //glEnable(GL_CULL_FACE);
+  //glCullFace(GL_BACK);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  
   glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED); //keeps mouse in game
 
@@ -92,15 +92,46 @@ while (!glfwWindowShouldClose(window)) {
 
     // Update dt and process input
     processInput(window, static_cast<float>(timeDiff));
-
-    // Rendering commands
-    shader.use();
+    
 
     glm::mat4 model = glm::mat4(1.0f);
     model = glm::rotate(model, glm::radians(0.0f), glm::vec3(1.0f, 1.0f, 1.0f)); 
 
     glm::mat4 view = camera.GetViewMatrix();
     glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (Screen::width / Screen::height), 0.1f, 100.0f);
+
+    glm::ivec3 voxel = chunkManager.mouseVoxel(ray, camera);
+    ray.update(camera.GetViewMatrix(), camera.getProjMatrix());
+    glm::vec3 cameraWorldPos = camera.getCameraWorldPosition();
+    
+    auto data = chunkManager.fetchBlockFromChunk(voxel);
+    if(data.second > 0){
+      outlineShader.use();
+      //this means that we found a block and now need to send its information to our outline shader.      
+
+      int outlineModelLoc = glGetUniformLocation(outlineShader.ID, "model");
+      glUniformMatrix4fv(outlineModelLoc, 1, GL_FALSE, glm::value_ptr(model));
+
+      int outlineViewLoc = glGetUniformLocation(outlineShader.ID, "view");
+      glUniformMatrix4fv(outlineViewLoc, 1, GL_FALSE, glm::value_ptr(view));
+      
+      int outlineProjLoc = glGetUniformLocation(outlineShader.ID, "projection");
+      glUniformMatrix4fv(outlineProjLoc, 1, GL_FALSE, glm::value_ptr(projection));
+
+      glBindVertexArray(b_VAO);  
+      
+      glBindBuffer(GL_ARRAY_BUFFER, b_VBO);
+      glBufferData(GL_ARRAY_BUFFER, data.second * sizeof(float), data.first, GL_STATIC_DRAW);
+      
+      //position attrib
+      glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+      glEnableVertexAttribArray(0);
+
+      glDrawArrays(GL_TRIANGLES, 0, data.second);
+      glBindVertexArray(0);
+    }
+    // Rendering commands
+    shader.use();
 
     int modelLoc = glGetUniformLocation(shader.ID, "model");
     glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
@@ -113,10 +144,8 @@ while (!glfwWindowShouldClose(window)) {
 
     chunkManager.drawChunks();
 
-    glm::ivec3 voxel = chunkManager.mouseVoxel(ray, camera);
-    ray.update(camera.GetViewMatrix(), camera.getProjMatrix());
-    glm::vec3 cameraWorldPos = camera.getCameraWorldPosition();
-  
+
+
     shader.use();
 
     //text rendering
