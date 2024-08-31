@@ -52,6 +52,8 @@ float intbound(float s, float ds) {
     return (ds > 0.0f) ? (1.0f - s + std::floor(s)) / ds : (s - std::floor(s)) / -ds;
 }
 
+//https://gamedev.stackexchange.com/questions/72120/how-do-i-find-voxels-along-a-ray?noredirect=1&lq=1
+//based off this ^ - note, i wasnt able to sucessful modify this code but chat gpt was :)
 glm::vec3 chunkManager::mouseVoxel(Raycast &ray, Camera &camera) {
         glm::vec3 rayWOR = ray.getCurrentRay();
 

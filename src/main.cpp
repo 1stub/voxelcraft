@@ -49,6 +49,8 @@ int main(){
   //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
   glEnable(GL_DEPTH_TEST);
   glEnable(GL_BLEND);
+  glDepthFunc(GL_LESS);
+  glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);  
   //glEnable(GL_CULL_FACE);
   //glCullFace(GL_BACK);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  
@@ -104,6 +106,22 @@ while (!glfwWindowShouldClose(window)) {
     ray.update(camera.GetViewMatrix(), camera.getProjMatrix());
     glm::vec3 cameraWorldPos = camera.getCameraWorldPosition();
     
+    // Rendering commands
+    shader.use();
+
+    int modelLoc = glGetUniformLocation(shader.ID, "model");
+    glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+
+    int viewLoc = glGetUniformLocation(shader.ID, "view");
+    glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
+    
+    int projLoc = glGetUniformLocation(shader.ID, "projection");
+    glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
+   
+    glStencilFunc(GL_ALWAYS, 1, 0xFF); 
+    glStencilMask(0xFF); 
+    chunkManager.drawChunks();
+
     auto data = chunkManager.fetchBlockFromChunk(voxel);
     if(data.second > 0){
       outlineShader.use();
@@ -126,25 +144,18 @@ while (!glfwWindowShouldClose(window)) {
       //position attrib
       glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
       glEnableVertexAttribArray(0);
-
+      
+      glDisable(GL_CULL_FACE);
+      glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+      glStencilMask(0x00); 
+      glDisable(GL_DEPTH_TEST);
       glDrawArrays(GL_TRIANGLES, 0, data.second);
+      glStencilMask(0xFF);
+      glStencilFunc(GL_ALWAYS, 1, 0xFF);   
+      glEnable(GL_DEPTH_TEST); 
+      glEnable(GL_CULL_FACE);
       glBindVertexArray(0);
     }
-    // Rendering commands
-    shader.use();
-
-    int modelLoc = glGetUniformLocation(shader.ID, "model");
-    glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-
-    int viewLoc = glGetUniformLocation(shader.ID, "view");
-    glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
-    
-    int projLoc = glGetUniformLocation(shader.ID, "projection");
-    glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
-
-    chunkManager.drawChunks();
-
-
 
     shader.use();
 
