@@ -49,6 +49,7 @@ class Chunk{
     double getNoiseValue(const siv::PerlinNoise &p, int x, int z);
     glm::vec3 mouseVoxel(Raycast &ray, Camera &camera);
     std::shared_ptr<Block> fetchBlock(glm::ivec3 blockCoords);
+    void deleteBlock(glm::ivec3 voxel, const siv::PerlinNoise &p);
     void drawChunk();
 
     std::unordered_map<glm::ivec3, std::shared_ptr<Block>, Comp_ivec3, Comp_ivec3> blocks; 

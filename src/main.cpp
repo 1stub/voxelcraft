@@ -1,6 +1,7 @@
-//#include <glad/glad.h>
-//#include <GLFW/glfw3.h>
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
 
+#include <GLFW/glfw3.h>
 #include <glm/ext/matrix_transform.hpp>
 #include <string>
 
@@ -156,8 +157,35 @@ while (!glfwWindowShouldClose(window)) {
       glEnable(GL_CULL_FACE);
       glBindVertexArray(0);
     }
+    
 
-    shader.use();
+
+    // Initialize the cooldown period and the last block break time
+    static bool mouseButtonPressed = false;
+    static auto lastBreakTime = std::chrono::high_resolution_clock::now();
+    constexpr double cooldownDuration = 0.5; // Cooldown duration in seconds
+
+    if (data.second > 0) {
+        // Get the current time
+        auto currentTime = std::chrono::high_resolution_clock::now();
+        // Calculate the elapsed time since the last block break
+        double elapsedTime = std::chrono::duration<double>(currentTime - lastBreakTime).count();
+
+        // Check if the mouse button is pressed, the cooldown has passed, and the button is not already registered as pressed
+        if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_1) == GLFW_PRESS && !mouseButtonPressed && elapsedTime >= cooldownDuration) {
+            // Break the block
+            chunkManager.deleteBlock(voxel);
+            // Set the flag to indicate the button is pressed
+            mouseButtonPressed = true;
+            // Update the last break time
+            lastBreakTime = currentTime;
+        }
+
+        // Reset the flag when the button is released
+        if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_1) == GLFW_RELEASE) {
+            mouseButtonPressed = false;
+        }
+    }
 
     //text rendering
     glDisable(GL_DEPTH_TEST);

@@ -13,6 +13,16 @@ chunkManager::chunkManager(){
   }
 }
 
+void chunkManager::deleteBlock(glm::ivec3 voxel){
+  BlockCoord blockCoords = {voxel.x, voxel.y, voxel.z};
+  glm::ivec2 chunkCoords(
+    blockCoords.x >= 0 ? blockCoords.x / Chunks::size : (blockCoords.x - Chunks::size + 1) / Chunks::size,
+    blockCoords.z >= 0 ? blockCoords.z / Chunks::size : (blockCoords.z - Chunks::size + 1) / Chunks::size
+  );
+  blockManager.erase(blockCoords);
+  chunks[chunkCoords]->deleteBlock(voxel, p);
+}
+
 bool chunkManager::blockExists(int x, int y, int z) const {
     BlockCoord coord = {x, y, z};
     return blockManager.find(coord) != blockManager.end();
@@ -58,7 +68,7 @@ glm::vec3 chunkManager::mouseVoxel(Raycast &ray, Camera &camera) {
         glm::vec3 rayWOR = ray.getCurrentRay();
 
         // Set the starting position and steps for the ray
-        float range = 64.0f; // max range to check (in voxels)
+        float range = 8.0f; // max range to check (in voxels)
         glm::vec3 camPos = camera.getCameraWorldPosition();
         int xPos = std::floor(camPos.x);
         int yPos = std::floor(camPos.y);

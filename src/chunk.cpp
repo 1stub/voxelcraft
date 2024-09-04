@@ -58,6 +58,37 @@ int Chunk::getNumBlocks(){
   return blocks.size();
 }
 
+void Chunk::deleteBlock(glm::ivec3 voxel, const siv::PerlinNoise &p){
+  voxelGrid[voxel.x + 1][voxel.y][voxel.z + 1] = 0;
+  blocks.erase(voxel);
+
+  //idea is to just check adjacent blocks to see if new faces need to be made. then update buffers
+  for(int x = voxel.x - 1; x <= voxel.x + 1; x++){
+    for(int z = voxel.z - 1; z <= voxel.z + 1; z++){
+      double noiseValue = getNoiseValue(p, x, z);
+      int height = static_cast<int>(noiseValue) + Chunks::size;
+      for(int y = voxel.y - 1; y <= voxel.y + 1; y++){
+        if(voxelGrid[x+1][y][z+1] == 1){
+          std::vector<int>faces = checkNeighbors(x + 1, y, z + 1);
+          glm::ivec3 bPos(x,y,z);
+          if(blocks.find(glm::ivec3(x,y,z)) == blocks.end() && faces.size() > 0){
+            blocks.emplace(bPos, std::make_unique<Block>(bPos.x, bPos.y, bPos.z));
+            blocks[bPos]->setType(y == height - 1 ? Grass : y > height - 4 ? Dirt : Stone);
+            setFaces(bPos, faces);
+          }else{ //block already exists, needs new faces/ remove faces
+            if(faces.size() > 0){
+              setFaces(bPos, faces);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  //now that that gross nested loop is done we just need to update our buffers
+  updateVertices();
+}
+
 std::vector<glm::ivec3> Chunk::getBlocks(){
   std::vector<glm::ivec3> ret;
   for(auto &b : blocks){
@@ -211,6 +242,7 @@ std::vector<int> Chunk::checkNeighbors(int x, int y, int z) {
 }
 
 void Chunk::setFaces(glm::ivec3 bPos, std::vector<int> faces){
+  blocks[bPos]->vertices.clear();
   blockTexCoords b_texSides = blockTextures[blocks[bPos]->getBlockId()];
   blockTexCoords b_texTop = blockTextures[blocks[bPos]->getBlockId()];
   blockTexCoords b_texBottom = blockTextures[blocks[bPos]->getBlockId()];
