@@ -58,34 +58,47 @@ int Chunk::getNumBlocks(){
   return blocks.size();
 }
 
-void Chunk::deleteBlock(glm::ivec3 voxel, const siv::PerlinNoise &p){
-  voxelGrid[voxel.x + 1][voxel.y][voxel.z + 1] = 0;
+void Chunk::deleteBlock(glm::ivec3 voxel, const siv::PerlinNoise &p) {
+  // Normalize voxel coordinates into chunk-local coordinates (0-15 range)
+  glm::ivec3 normalizedBlockCoords(
+      (voxel.x % Chunks::size + Chunks::size) % Chunks::size, // Handles negative modulo correctly
+      voxel.y,
+      (voxel.z % Chunks::size + Chunks::size) % Chunks::size  // Handles negative modulo correctly
+  );
+  voxelGrid[normalizedBlockCoords.x + 1][normalizedBlockCoords.y][normalizedBlockCoords.z + 1] = 0;
   blocks.erase(voxel);
 
-  //idea is to just check adjacent blocks to see if new faces need to be made. then update buffers
-  for(int x = voxel.x - 1; x <= voxel.x + 1; x++){
-    for(int z = voxel.z - 1; z <= voxel.z + 1; z++){
-      double noiseValue = getNoiseValue(p, x, z);
-      int height = static_cast<int>(noiseValue) + Chunks::size;
-      for(int y = voxel.y - 1; y <= voxel.y + 1; y++){
-        if(voxelGrid[x+1][y][z+1] == 1){
-          std::vector<int>faces = checkNeighbors(x + 1, y, z + 1);
-          glm::ivec3 bPos(x,y,z);
-          if(blocks.find(glm::ivec3(x,y,z)) == blocks.end() && faces.size() > 0){
-            blocks.emplace(bPos, std::make_unique<Block>(bPos.x, bPos.y, bPos.z));
-            blocks[bPos]->setType(y == height - 1 ? Grass : y > height - 4 ? Dirt : Stone);
-            setFaces(bPos, faces);
-          }else{ //block already exists, needs new faces/ remove faces
-            if(faces.size() > 0){
-              setFaces(bPos, faces);
-            }
-          }
-        }
+  std::vector<glm::ivec3> directions = {
+      {0, 1, 0},   // Above
+      {0, -1, 0},  // Below
+      {-1, 0, 0},  // Left
+      {1, 0, 0},   // Right
+      {0, 0, -1},  // Behind
+      {0, 0, 1}    // In front
+  };
+
+  // Iterate through the directions to check each adjacent block
+  for (const auto& direction : directions) {
+    glm::ivec3 neighborPos = voxel + direction;
+    glm::ivec3 normalizedNeighborPos = normalizedBlockCoords + direction;
+    double noiseValue = getNoiseValue(p, normalizedNeighborPos.x, normalizedNeighborPos.z);
+    int height = static_cast<int>(noiseValue) + Chunks::size;
+    
+    std::vector<int> faces = checkNeighbors(normalizedNeighborPos.x + 1, normalizedNeighborPos.y, normalizedNeighborPos.z + 1);
+    
+    // If the neighbor block does not exist and new faces are needed, create a new block
+    if (blocks.find(neighborPos) == blocks.end() && !faces.empty()) {
+        blocks.emplace(neighborPos, std::make_unique<Block>(neighborPos.x, neighborPos.y - 2, neighborPos.z));
+        blocks[neighborPos]->setType(neighborPos.y == height - 1 ? Grass : neighborPos.y > height - 4 ? Dirt : Stone);
+        setFaces(neighborPos, faces);
+    }else{
+      if(!faces.empty()) {  // Update the faces of the existing block if necessary
+        setFaces(neighborPos, faces);
       }
     }
   }
 
-  //now that that gross nested loop is done we just need to update our buffers
+  // now we modify our buffer with new data
   updateVertices();
 }
 
@@ -177,21 +190,31 @@ void Chunk::setBlockTexture(){
 }
 
 //we need to update our vbo with new vertex data
-void Chunk::updateVertices(){
-  int offset = 0;
-  for(auto &b : blocks){
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferSubData(GL_ARRAY_BUFFER, offset, b.second->vertices.size() * sizeof(float), &b.second->vertices.front());
-    offset += b.second->vertices.size() * sizeof(float);
-  }
+void Chunk::updateVertices() {
+    int totalSize = 0;
+    std::vector<float> data;
+    for (auto &b : blocks) {
+        totalSize += b.second->vertices.size();
+        data.insert(data.end(), b.second->vertices.begin(), b.second->vertices.end());
+    }
+    verticeCount = totalSize;
 
-  //make this call once, textures get created based on the coords associated with the block
-  textureBlocks();
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, data.size() * sizeof(float), data.data(), GL_DYNAMIC_DRAW);
+
+    // Optionally, bind the VAO again if required by your rendering process.
+    //glBindVertexArray(VAO);
+
+    // Ensure the texture setup is called correctly (if needed).
+    textureBlocks();
+
+    // Unbind the VBO (optional, for safety).
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 //This checks to see what faces are visible
 //Will eventually need to use the voxelGrid for this
-std::vector<int> Chunk::checkNeighbors(int x, int y, int z) {
+std::vector<int> Chunk::checkNeighbors(int x, int y, int z){
     std::vector<int> faces;
     // Helper lambda to check if the block is air (or not solid)
     auto isAir = [&](int x, int y, int z) -> bool {
@@ -242,7 +265,6 @@ std::vector<int> Chunk::checkNeighbors(int x, int y, int z) {
 }
 
 void Chunk::setFaces(glm::ivec3 bPos, std::vector<int> faces){
-  blocks[bPos]->vertices.clear();
   blockTexCoords b_texSides = blockTextures[blocks[bPos]->getBlockId()];
   blockTexCoords b_texTop = blockTextures[blocks[bPos]->getBlockId()];
   blockTexCoords b_texBottom = blockTextures[blocks[bPos]->getBlockId()];
