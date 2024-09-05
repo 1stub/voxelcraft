@@ -9,7 +9,8 @@ Chunk::Chunk(int xOff, int zOff, const siv::PerlinNoise &p) : xOffset(xOff), zOf
   for(int x = 0; x < Chunks::size; x++){
     for(int z = 0; z < Chunks::size; z++){
       double noiseValue = getNoiseValue(p, x, z);
-      int height = static_cast<int>(noiseValue) + Chunks::size;
+      int iNoiseVal = noiseValue < 0.0 ? glm::ceil(noiseValue) : glm::floor(noiseValue);
+      int height = iNoiseVal + Chunks::size;
       for(int y = 0; y < Chunks::height; y++){
         if (voxelGrid[x+1][y][z+1] == 1) {
           //our block position
@@ -81,19 +82,22 @@ void Chunk::deleteBlock(glm::ivec3 voxel, const siv::PerlinNoise &p) {
   for (const auto& direction : directions) {
     glm::ivec3 neighborPos = voxel + direction;
     glm::ivec3 normalizedNeighborPos = normalizedBlockCoords + direction;
-    double noiseValue = getNoiseValue(p, normalizedNeighborPos.x, normalizedNeighborPos.z);
-    int height = static_cast<int>(noiseValue) + Chunks::size;
-    
-    std::vector<int> faces = checkNeighbors(normalizedNeighborPos.x + 1, normalizedNeighborPos.y, normalizedNeighborPos.z + 1);
-    
-    // If the neighbor block does not exist and new faces are needed, create a new block
-    if (blocks.find(neighborPos) == blocks.end() && !faces.empty()) {
-        blocks.emplace(neighborPos, std::make_unique<Block>(neighborPos.x, neighborPos.y - 2, neighborPos.z));
-        blocks[neighborPos]->setType(neighborPos.y == height - 1 ? Grass : neighborPos.y > height - 4 ? Dirt : Stone);
-        setFaces(neighborPos, faces);
-    }else{
-      if(!faces.empty()) {  // Update the faces of the existing block if necessary
-        setFaces(neighborPos, faces);
+    if(voxelGrid[normalizedNeighborPos.x + 1][normalizedNeighborPos.y][normalizedNeighborPos.z + 1] == 1){
+      double noiseValue = getNoiseValue(p, normalizedNeighborPos.x, normalizedNeighborPos.z);
+      int iNoiseVal = noiseValue < 0.0 ? glm::ceil(noiseValue) : glm::floor(noiseValue);
+      int height = iNoiseVal + Chunks::size;
+
+      std::vector<int> faces = checkNeighbors(normalizedNeighborPos.x + 1, normalizedNeighborPos.y, normalizedNeighborPos.z + 1);
+      
+      // If the neighbor block does not exist and new faces are needed, create a new block
+      if (blocks.find(neighborPos) == blocks.end() && !faces.empty()) {
+          blocks.emplace(neighborPos, std::make_unique<Block>(neighborPos.x, neighborPos.y, neighborPos.z));
+          blocks[neighborPos]->setType(neighborPos.y == height - 1 ? Grass : neighborPos.y > height - 4 ? Dirt : Stone);
+          setFaces(neighborPos, faces);
+      }else{
+        if(!faces.empty()) {  // Update the faces of the existing block if necessary
+          setFaces(neighborPos, faces);
+        }
       }
     }
   }
@@ -101,6 +105,8 @@ void Chunk::deleteBlock(glm::ivec3 voxel, const siv::PerlinNoise &p) {
   // now we modify our buffer with new data
   updateVertices();
 }
+
+
 
 std::vector<glm::ivec3> Chunk::getBlocks(){
   std::vector<glm::ivec3> ret;

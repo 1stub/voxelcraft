@@ -21,6 +21,19 @@ void chunkManager::deleteBlock(glm::ivec3 voxel){
   );
   blockManager.erase(blockCoords);
   chunks[chunkCoords]->deleteBlock(voxel, p);
+  //NOTE !!!!!!
+  //This needs to be changed - only for testing purposes now
+  //there is no need to clear the whole manager when only one chunks blocks change. BlockManager needs reworked 
+  //for the sake of updating blocks on both placement and deletion
+  blockManager.clear();
+  for(int i = -Render::renderDistance; i < Render::renderDistance; i++){
+    for(int j = -Render::renderDistance; j < Render::renderDistance; j++){
+      glm::ivec2 chunkPos(i,j);
+      for(auto &b : chunks[chunkPos]->getBlocks()){
+        blockManager.insert({b.x, b.y, b.z});
+      }
+    }
+  }
 }
 
 bool chunkManager::blockExists(int x, int y, int z) const {
@@ -65,58 +78,58 @@ float intbound(float s, float ds) {
 //https://gamedev.stackexchange.com/questions/72120/how-do-i-find-voxels-along-a-ray?noredirect=1&lq=1
 //based off this ^ - note, i wasnt able to sucessful modify this code but chat gpt was :)
 glm::vec3 chunkManager::mouseVoxel(Raycast &ray, Camera &camera) {
-        glm::vec3 rayWOR = ray.getCurrentRay();
+  glm::vec3 rayWOR = ray.getCurrentRay();
 
-        // Set the starting position and steps for the ray
-        float range = 8.0f; // max range to check (in voxels)
-        glm::vec3 camPos = camera.getCameraWorldPosition();
-        int xPos = std::floor(camPos.x);
-        int yPos = std::floor(camPos.y);
-        int zPos = std::floor(camPos.z);
-        int stepX = signum(rayWOR.x);
-        int stepY = signum(rayWOR.y);
-        int stepZ = signum(rayWOR.z);
+  // Set the starting position and steps for the ray
+  float range = 8.0f; // max range to check (in voxels)
+  glm::vec3 camPos = camera.getCameraWorldPosition();
+  int xPos = std::floor(camPos.x);
+  int yPos = std::floor(camPos.y);
+  int zPos = std::floor(camPos.z);
+  int stepX = signum(rayWOR.x);
+  int stepY = signum(rayWOR.y);
+  int stepZ = signum(rayWOR.z);
 
-        // Compute initial tMax and tDelta values for DDA
-        glm::vec3 tMax = glm::vec3(intbound(camPos.x, rayWOR.x), intbound(camPos.y, rayWOR.y), intbound(camPos.z, rayWOR.z));
-        glm::vec3 tDelta = glm::vec3((float)stepX / rayWOR.x, (float)stepY / rayWOR.y, (float)stepZ / rayWOR.z);
-        glm::vec3 faceNormal;
+  // Compute initial tMax and tDelta values for DDA
+  glm::vec3 tMax = glm::vec3(intbound(camPos.x, rayWOR.x), intbound(camPos.y, rayWOR.y), intbound(camPos.z, rayWOR.z));
+  glm::vec3 tDelta = glm::vec3((float)stepX / rayWOR.x, (float)stepY / rayWOR.y, (float)stepZ / rayWOR.z);
+  glm::vec3 faceNormal;
 
-        // Ray traversal loop
-        do {
-            // Check if current voxel is solid
-            if (blockExists(xPos, yPos, zPos)) {
-                std::cout << "Solid voxel hit at: (" << xPos << ", " << yPos << ", " << zPos << ")" << std::endl;
-                return glm::vec3(xPos, yPos, zPos);
-            }
+  // Ray traversal loop
+  do {
+      // Check if current voxel is solid
+      if (blockExists(xPos, yPos, zPos)) {
+          std::cout << "Solid voxel hit at: (" << xPos << ", " << yPos << ", " << zPos << ")" << std::endl;
+          return glm::vec3(xPos, yPos, zPos);
+      }
 
-            // Move to the next voxel based on tMax
-            if (tMax.x < tMax.y) {
-                if (tMax.x < tMax.z) {
-                    if (tMax.x > range) break;
-                    xPos += stepX;
-                    tMax.x += tDelta.x;
-                    faceNormal = glm::vec3(-stepX, 0, 0);
-                } else {
-                    if (tMax.z > range) break;
-                    zPos += stepZ;
-                    tMax.z += tDelta.z;
-                    faceNormal = glm::vec3(0, 0, -stepZ);
-                }
-            } else {
-                if (tMax.y < tMax.z) {
-                    if (tMax.y > range) break;
-                    yPos += stepY;
-                    tMax.y += tDelta.y;
-                    faceNormal = glm::vec3(0, -stepY, 0);
-                } else {
-                    if (tMax.z > range) break;
-                    zPos += stepZ;
-                    tMax.z += tDelta.z;
-                    faceNormal = glm::vec3(0, 0, -stepZ);
-                }
-            }
-        } while (true);
+      // Move to the next voxel based on tMax
+      if (tMax.x < tMax.y) {
+          if (tMax.x < tMax.z) {
+              if (tMax.x > range) break;
+              xPos += stepX;
+              tMax.x += tDelta.x;
+              faceNormal = glm::vec3(-stepX, 0, 0);
+          } else {
+              if (tMax.z > range) break;
+              zPos += stepZ;
+              tMax.z += tDelta.z;
+              faceNormal = glm::vec3(0, 0, -stepZ);
+          }
+      } else {
+          if (tMax.y < tMax.z) {
+              if (tMax.y > range) break;
+              yPos += stepY;
+              tMax.y += tDelta.y;
+              faceNormal = glm::vec3(0, -stepY, 0);
+          } else {
+              if (tMax.z > range) break;
+              zPos += stepZ;
+              tMax.z += tDelta.z;
+              faceNormal = glm::vec3(0, 0, -stepZ);
+          }
+      }
+  } while (true);
   return glm::vec3(0,0,0); 
 }
 
