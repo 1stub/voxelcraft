@@ -67,6 +67,10 @@ void Chunk::deleteBlock(glm::ivec3 voxel, const siv::PerlinNoise &p) {
       (voxel.z % Chunks::size + Chunks::size) % Chunks::size  // Handles negative modulo correctly
   );
   voxelGrid[normalizedBlockCoords.x + 1][normalizedBlockCoords.y][normalizedBlockCoords.z + 1] = 0;
+  //if we are on boundary of chunk, we need adjacent
+  //think this needs to be in the chunkManager so I can easly access adjacent chunk from map
+  if(normalizedBlockCoords.x == 0 || normalizedBlockCoords.z == 0){
+  }
   blocks.erase(voxel);
 
   std::vector<glm::ivec3> directions = {
@@ -106,7 +110,21 @@ void Chunk::deleteBlock(glm::ivec3 voxel, const siv::PerlinNoise &p) {
   updateVertices();
 }
 
-
+//will need to modify to remove face between blocks next to and current block being places
+void Chunk::placeBlock(const glm::ivec3 voxel){
+  glm::ivec3 newBlock(voxel.x, voxel.y + 1, voxel.z);
+  glm::ivec3 normalizedBlockCoords(
+      (newBlock.x % Chunks::size + Chunks::size) % Chunks::size, // Handles negative modulo correctly
+      newBlock.y,
+      (newBlock.z % Chunks::size + Chunks::size) % Chunks::size  // Handles negative modulo correctly
+  );
+  voxelGrid[normalizedBlockCoords.x+1][normalizedBlockCoords.y][normalizedBlockCoords.z + 1] = 1;
+  std::vector<int> faces = checkNeighbors(normalizedBlockCoords.x + 1, normalizedBlockCoords.y, normalizedBlockCoords.z + 1);
+  blocks.emplace(newBlock, std::make_unique<Block>(newBlock.x, newBlock.y, newBlock.z));
+  blocks[newBlock]->setType(Stone);
+  setFaces(newBlock, faces);
+  updateVertices();
+}
 
 std::vector<glm::ivec3> Chunk::getBlocks(){
   std::vector<glm::ivec3> ret;

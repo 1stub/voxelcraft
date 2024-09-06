@@ -181,8 +181,21 @@ while (!glfwWindowShouldClose(window)) {
             lastBreakTime = currentTime;
         }
 
+        // Check if the mouse button is pressed, the cooldown has passed, and the button is not already registered as pressed
+        if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_2) == GLFW_PRESS && !mouseButtonPressed && elapsedTime >= cooldownDuration) {
+            // Break the block
+            chunkManager.placeBlock(voxel);
+            // Set the flag to indicate the button is pressed
+            mouseButtonPressed = true;
+            // Update the last break time
+            lastBreakTime = currentTime;
+        }
+
         // Reset the flag when the button is released
         if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_1) == GLFW_RELEASE) {
+            mouseButtonPressed = false;
+        }
+        if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_2) == GLFW_RELEASE) {
             mouseButtonPressed = false;
         }
     }
