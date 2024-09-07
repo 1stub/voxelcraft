@@ -69,8 +69,7 @@ void Chunk::deleteBlock(glm::ivec3 voxel, const siv::PerlinNoise &p) {
   voxelGrid[normalizedBlockCoords.x + 1][normalizedBlockCoords.y][normalizedBlockCoords.z + 1] = 0;
   //if we are on boundary of chunk, we need adjacent
   //think this needs to be in the chunkManager so I can easly access adjacent chunk from map
-  if(normalizedBlockCoords.x == 0 || normalizedBlockCoords.z == 0){
-  }
+
   blocks.erase(voxel);
 
   std::vector<glm::ivec3> directions = {
@@ -81,34 +80,47 @@ void Chunk::deleteBlock(glm::ivec3 voxel, const siv::PerlinNoise &p) {
       {0, 0, -1},  // Behind
       {0, 0, 1}    // In front
   };
-
-  // Iterate through the directions to check each adjacent block
+  // Iterate through directions to check adjacent blocks
   for (const auto& direction : directions) {
-    glm::ivec3 neighborPos = voxel + direction;
-    glm::ivec3 normalizedNeighborPos = normalizedBlockCoords + direction;
-    if(voxelGrid[normalizedNeighborPos.x + 1][normalizedNeighborPos.y][normalizedNeighborPos.z + 1] == 1){
-      double noiseValue = getNoiseValue(p, normalizedNeighborPos.x, normalizedNeighborPos.z);
-      int iNoiseVal = noiseValue < 0.0 ? glm::ceil(noiseValue) : glm::floor(noiseValue);
-      int height = iNoiseVal + Chunks::size;
+      glm::ivec3 neighborPos = voxel + direction;
+      glm::ivec3 normalizedNeighborPos = normalizedBlockCoords + direction;
 
-      std::vector<int> faces = checkNeighbors(normalizedNeighborPos.x + 1, normalizedNeighborPos.y, normalizedNeighborPos.z + 1);
-      
-      // If the neighbor block does not exist and new faces are needed, create a new block
-      if (blocks.find(neighborPos) == blocks.end() && !faces.empty()) {
-          blocks.emplace(neighborPos, std::make_unique<Block>(neighborPos.x, neighborPos.y, neighborPos.z));
-          blocks[neighborPos]->setType(neighborPos.y == height - 1 ? Grass : neighborPos.y > height - 4 ? Dirt : Stone);
-          setFaces(neighborPos, faces);
-      }else{
-        if(!faces.empty()) {  // Update the faces of the existing block if necessary
-          setFaces(neighborPos, faces);
-        }
-      }
-    }
+      // Check if the neighbor block is within the current chunk
+      bool isWithinChunk = (normalizedNeighborPos.x >= 0 && normalizedNeighborPos.x < Chunks::size &&
+                            normalizedNeighborPos.z >= 0 && normalizedNeighborPos.z < Chunks::size);
+
+      // Check if the neighbor block is part of the current chunk
+      if (isWithinChunk) {
+          if (voxelGrid[normalizedNeighborPos.x + 1][normalizedNeighborPos.y][normalizedNeighborPos.z + 1] == 1) {
+              double noiseValue = getNoiseValue(p, normalizedNeighborPos.x, normalizedNeighborPos.z);
+              int iNoiseVal = noiseValue < 0.0 ? glm::ceil(noiseValue) : glm::floor(noiseValue);
+              int height = iNoiseVal + Chunks::size;
+
+              std::vector<int> faces = checkNeighbors(normalizedNeighborPos.x + 1, normalizedNeighborPos.y, normalizedNeighborPos.z + 1);
+
+              // If the neighbor block does not exist and new faces are needed, create a new block
+              if (blocks.find(neighborPos) == blocks.end() && !faces.empty()) {
+                  blocks.emplace(neighborPos, std::make_unique<Block>(neighborPos.x, neighborPos.y, neighborPos.z));
+                  blocks[neighborPos]->setType(neighborPos.y == height - 1 ? Grass : neighborPos.y > height - 4 ? Dirt : Stone);
+                  setFaces(neighborPos, faces);
+              } else if (!faces.empty()) {  // Update existing block faces if necessary
+                  setFaces(neighborPos, faces);
+              }
+          }
+      } /*else {
+          // Handle cases where the neighboring block is in an adjacent chunk
+          // This may involve notifying the chunk manager or updating neighboring chunks
+          Chunk* adjacentChunk = chunkManager->getChunk(neighborPos); // Implement this function as needed
+          if (adjacentChunk) {
+              adjacentChunk->updateChunkOnBlockBreak(neighborPos);
+          }
+      }*/
   }
 
-  // now we modify our buffer with new data
+  // Modify buffer with new data
   updateVertices();
 }
+
 
 //will need to modify to remove face between blocks next to and current block being places
 void Chunk::placeBlock(const glm::ivec3 voxel){
