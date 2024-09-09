@@ -163,7 +163,7 @@ while (!glfwWindowShouldClose(window)) {
     // Initialize the cooldown period and the last block break time
     static bool mouseButtonPressed = false;
     static auto lastBreakTime = std::chrono::high_resolution_clock::now();
-    constexpr double cooldownDuration = 0.5; // Cooldown duration in seconds
+    constexpr double cooldownDuration = 0.25; // Cooldown duration in seconds
 
     if (data.second > 0) {
         // Get the current time
@@ -171,27 +171,18 @@ while (!glfwWindowShouldClose(window)) {
         // Calculate the elapsed time since the last block break
         double elapsedTime = std::chrono::duration<double>(currentTime - lastBreakTime).count();
 
-        // Check if the mouse button is pressed, the cooldown has passed, and the button is not already registered as pressed
         if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_1) == GLFW_PRESS && !mouseButtonPressed && elapsedTime >= cooldownDuration) {
-            // Break the block
             chunkManager.deleteBlock(voxel);
-            // Set the flag to indicate the button is pressed
             mouseButtonPressed = true;
-            // Update the last break time
             lastBreakTime = currentTime;
         }
 
-        // Check if the mouse button is pressed, the cooldown has passed, and the button is not already registered as pressed
         if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_2) == GLFW_PRESS && !mouseButtonPressed && elapsedTime >= cooldownDuration) {
-            // Break the block
             chunkManager.placeBlock(voxel);
-            // Set the flag to indicate the button is pressed
             mouseButtonPressed = true;
-            // Update the last break time
             lastBreakTime = currentTime;
         }
 
-        // Reset the flag when the button is released
         if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_1) == GLFW_RELEASE) {
             mouseButtonPressed = false;
         }

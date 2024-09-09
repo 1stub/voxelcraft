@@ -165,7 +165,7 @@ void Chunk::updateChunkOnBlockBreak(const glm::ivec3 blockPos, const glm::ivec3 
   if (voxelGrid[normalizedBlockPos.x + 1][normalizedBlockPos.y][normalizedBlockPos.z + 1] == 1  && faces.size() > 0) {
     // we need to create more blocks in order to properly present new faces (this is generally the case when digging down)
     if(blocks.find(blockPos) == blocks.end()){
-      double noiseValue = getNoiseValue(p, blockPos.x, blockPos.z); //future optimization could be storing heights in vector of some sort
+      double noiseValue = getNoiseValue(p, normalizedBlockPos.x, normalizedBlockPos.z); //future optimization could be storing heights in vector of some sort
       int iNoiseVal = noiseValue < 0.0 ? glm::ceil(noiseValue) : glm::floor(noiseValue);
       int height = iNoiseVal + Chunks::size;
       blocks.emplace(blockPos, std::make_unique<Block>(blockPos.x, blockPos.y, blockPos.z));
