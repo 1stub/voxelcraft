@@ -1,5 +1,6 @@
 #include "chunk.h"
 #include "block.h"
+#include "perlin.hpp"
 #include <memory>
 
 Chunk::Chunk(int xOff, int zOff, const siv::PerlinNoise &p) : xOffset(xOff), zOffset(zOff){
@@ -115,8 +116,9 @@ void Chunk::deleteBlock(glm::ivec3 voxel, const siv::PerlinNoise &p, std::vector
         );
 
         for( auto c : adjChunks){
-          if(c->xOffset == neighborChunkCoords.x || c->zOffset == neighborChunkCoords.y){ 
-            c->updateChunkOnBlockBreak(neighborPos, voxel);
+          if(c->xOffset == neighborChunkCoords.x && c->zOffset == neighborChunkCoords.y){ 
+            const glm::ivec2 chunkPos(xOffset, zOffset);
+            c->updateChunkOnBlockBreak(neighborPos, voxel, chunkPos, p);
           }
         }
       }
@@ -128,7 +130,7 @@ void Chunk::deleteBlock(glm::ivec3 voxel, const siv::PerlinNoise &p, std::vector
 
 //the idea here is to look across chunk boundaries and find if the block adjacent to what was broken is solid
 //if it is we need to regen its buffers based on what is exposed then update the vbo
-void Chunk::updateChunkOnBlockBreak(const glm::ivec3 blockPos, const glm::ivec3 originalBlockPos){
+void Chunk::updateChunkOnBlockBreak(const glm::ivec3 blockPos, const glm::ivec3 originalBlockPos, const glm::ivec2 originalChunkPos, const siv::PerlinNoise &p){
   const glm::ivec3 normalizedBlockPos(
     (blockPos.x % Chunks::size + Chunks::size) % Chunks::size, // Handles negative modulo correctly
     blockPos.y,
@@ -141,24 +143,41 @@ void Chunk::updateChunkOnBlockBreak(const glm::ivec3 blockPos, const glm::ivec3 
   );
   //update chunks voxelGrid with new deleted Block
   //what I was trying to do was properly update the DELETED block not the block we are looking at based on direction from delete block function
-  /*if(normalizedOriginalBlockPos.x == 0) voxelGrid[0][normalizedOriginalBlockPos.y][normalizedOriginalBlockPos.z + 1] = 0;
-  if(normalizedOriginalBlockPos.x == Chunks::size - 1) voxelGrid[normalizedOriginalBlockPos.x + 1][normalizedOriginalBlockPos.y][Chunks::size + 1] = 0;
+  if(normalizedOriginalBlockPos.x == 0) voxelGrid[Chunks::size + 1][normalizedOriginalBlockPos.y][normalizedOriginalBlockPos.z + 1] = 0;
+  if(normalizedOriginalBlockPos.x == Chunks::size - 1) voxelGrid[0][normalizedOriginalBlockPos.y][normalizedOriginalBlockPos.z + 1] = 0;
   if(normalizedOriginalBlockPos.z == 0) voxelGrid[normalizedOriginalBlockPos.x + 1][normalizedOriginalBlockPos.y][Chunks::size + 1] = 0;
-  if(normalizedOriginalBlockPos.x == Chunks::size - 1) voxelGrid[0][normalizedOriginalBlockPos.y][normalizedOriginalBlockPos.z + 1] = 0;*/
+  if(normalizedOriginalBlockPos.z == Chunks::size - 1) voxelGrid[normalizedOriginalBlockPos.x + 1][normalizedOriginalBlockPos.y][0] = 0;
 
-  if(normalizedBlockPos.x == 0) voxelGrid[0][normalizedBlockPos.y][normalizedBlockPos.z + 1] = 0;
+  /*if(normalizedBlockPos.x == 0) voxelGrid[0][normalizedBlockPos.y][normalizedBlockPos.z + 1] = 0;
   if(normalizedBlockPos.x == Chunks::size - 1) voxelGrid[Chunks::size + 1][normalizedBlockPos.y][normalizedBlockPos.z + 1] = 0;
   if(normalizedBlockPos.z == 0) voxelGrid[normalizedBlockPos.x + 1][normalizedBlockPos.y][0] = 0;
-  if(normalizedBlockPos.x == Chunks::size - 1) voxelGrid[normalizedBlockPos.x + 1][normalizedBlockPos.y][Chunks::size + 1] = 0;
+  if(normalizedBlockPos.x == Chunks::size - 1) voxelGrid[normalizedBlockPos.x + 1][normalizedBlockPos.y][Chunks::size + 1] = 0;*/
+
+  //idea is to find what direction we moved in in chunk space to determine what block in padding needs to be set to zero
+  /*if(this->xOffset > originalChunkPos.x) voxelGrid[0][normalizedOriginalBlockPos.y][normalizedOriginalBlockPos.z + 1] = 0;
+  if(this->xOffset < originalChunkPos.x) voxelGrid[Chunks::size + 1][normalizedOriginalBlockPos.y][normalizedOriginalBlockPos.z + 1] = 0;
+  if(this->zOffset > originalChunkPos.y) voxelGrid[normalizedOriginalBlockPos.x + 1][normalizedOriginalBlockPos.y][0] = 0;
+  if(this->zOffset < originalChunkPos.y) voxelGrid[normalizedOriginalBlockPos.x + 1][normalizedOriginalBlockPos.y][Chunks::size + 1] = 0;*/
 
   std::vector<int>faces = checkNeighbors(normalizedBlockPos.x + 1, normalizedBlockPos.y, normalizedBlockPos.z + 1);
-  
-  if (voxelGrid[normalizedBlockPos.x + 1][normalizedBlockPos.y][normalizedBlockPos.z + 1] == 1 && blocks.find(blockPos) != blocks.end() && faces.size() > 0) {
-    blockType bT = blocks[blockPos]->getBlockType();
-    blocks.erase(blockPos);
-    blocks.emplace(blockPos, std::make_unique<Block>(blockPos.x, blockPos.y, blockPos.z));
-    blocks[blockPos]->setType(bT);
-    setFaces(blockPos, faces);
+
+
+  if (voxelGrid[normalizedBlockPos.x + 1][normalizedBlockPos.y][normalizedBlockPos.z + 1] == 1  && faces.size() > 0) {
+    // we need to create more blocks in order to properly present new faces (this is generally the case when digging down)
+    if(blocks.find(blockPos) == blocks.end()){
+      double noiseValue = getNoiseValue(p, blockPos.x, blockPos.z); //future optimization could be storing heights in vector of some sort
+      int iNoiseVal = noiseValue < 0.0 ? glm::ceil(noiseValue) : glm::floor(noiseValue);
+      int height = iNoiseVal + Chunks::size;
+      blocks.emplace(blockPos, std::make_unique<Block>(blockPos.x, blockPos.y, blockPos.z));
+      blocks[blockPos]->setType(blockPos.y == height - 1 ? Grass : blockPos.y > height - 4 ? Dirt : Stone);
+      setFaces(blockPos, faces);
+    }else{
+      blockType bT = blocks[blockPos]->getBlockType();
+      blocks.erase(blockPos);
+      blocks.emplace(blockPos, std::make_unique<Block>(blockPos.x, blockPos.y, blockPos.z));
+      blocks[blockPos]->setType(bT);
+      setFaces(blockPos, faces);
+    }
   }
 
   updateVertices();
