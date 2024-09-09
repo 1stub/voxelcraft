@@ -50,7 +50,7 @@ class Chunk{
     glm::vec3 mouseVoxel(Raycast &ray, Camera &camera);
     std::shared_ptr<Block> fetchBlock(glm::ivec3 blockCoords);
     void deleteBlock(glm::ivec3 voxel, const siv::PerlinNoise &p, std::vector<Chunk*> adjChunks);
-    void updateChunkOnBlockBreak(const glm::ivec3 blockPos);
+    void updateChunkOnBlockBreak(const glm::ivec3 blockPos, const glm::ivec3 originalBlockPos);
     void placeBlock(const glm::ivec3 voxel);
     void drawChunk();
 

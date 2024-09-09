@@ -107,7 +107,7 @@ void Chunk::deleteBlock(glm::ivec3 voxel, const siv::PerlinNoise &p, std::vector
                   setFaces(neighborPos, faces);
               }
           }
-      } /*else {
+      } else {
           // Handle cases where the neighboring block is in an adjacent chunk
         glm::ivec2 neighborChunkCoords(
           neighborPos.x >= 0 ? neighborPos.x / Chunks::size : (neighborPos.x - Chunks::size + 1) / Chunks::size,
@@ -115,36 +115,47 @@ void Chunk::deleteBlock(glm::ivec3 voxel, const siv::PerlinNoise &p, std::vector
         );
 
         for( auto c : adjChunks){
-          if(c->xOffset == neighborChunkCoords.x && c->zOffset == neighborChunkCoords.y){
-            c->updateChunkOnBlockBreak(neighborPos);
-            break;
+          if(c->xOffset == neighborChunkCoords.x || c->zOffset == neighborChunkCoords.y){ 
+            c->updateChunkOnBlockBreak(neighborPos, voxel);
           }
         }
-      }*/
+      }
   }
 
   // Modify buffer with new data
   updateVertices();
 }
 
-void Chunk::updateChunkOnBlockBreak(const glm::ivec3 blockPos){
+//the idea here is to look across chunk boundaries and find if the block adjacent to what was broken is solid
+//if it is we need to regen its buffers based on what is exposed then update the vbo
+void Chunk::updateChunkOnBlockBreak(const glm::ivec3 blockPos, const glm::ivec3 originalBlockPos){
   const glm::ivec3 normalizedBlockPos(
     (blockPos.x % Chunks::size + Chunks::size) % Chunks::size, // Handles negative modulo correctly
     blockPos.y,
     (blockPos.z % Chunks::size + Chunks::size) % Chunks::size  // Handles negative modulo correctly
   );
-
+  const glm::ivec3 normalizedOriginalBlockPos(
+    (originalBlockPos.x % Chunks::size + Chunks::size) % Chunks::size, // Handles negative modulo correctly
+    originalBlockPos.y,
+    (originalBlockPos.z % Chunks::size + Chunks::size) % Chunks::size  // Handles negative modulo correctly
+  );
   //update chunks voxelGrid with new deleted Block
-  if(normalizedBlockPos.x == 0) voxelGrid[0][normalizedBlockPos.y][normalizedBlockPos.z + 1] = 0;
-  if(normalizedBlockPos.x == Chunks::size - 1) voxelGrid[Chunks::size + 1][normalizedBlockPos.y][normalizedBlockPos.z] = 0;
-  if(normalizedBlockPos.z == 0) voxelGrid[normalizedBlockPos.x][normalizedBlockPos.y][0] = 0;
-  if(normalizedBlockPos.x == Chunks::size - 1) voxelGrid[normalizedBlockPos.x][normalizedBlockPos.y][Chunks::size + 1] = 0;
-  blockType bT = blocks[blockPos]->getBlockType();
+  //what I was trying to do was properly update the DELETED block not the block we are looking at based on direction from delete block function
+  /*if(normalizedOriginalBlockPos.x == 0) voxelGrid[0][normalizedOriginalBlockPos.y][normalizedOriginalBlockPos.z + 1] = 0;
+  if(normalizedOriginalBlockPos.x == Chunks::size - 1) voxelGrid[normalizedOriginalBlockPos.x + 1][normalizedOriginalBlockPos.y][Chunks::size + 1] = 0;
+  if(normalizedOriginalBlockPos.z == 0) voxelGrid[normalizedOriginalBlockPos.x + 1][normalizedOriginalBlockPos.y][Chunks::size + 1] = 0;
+  if(normalizedOriginalBlockPos.x == Chunks::size - 1) voxelGrid[0][normalizedOriginalBlockPos.y][normalizedOriginalBlockPos.z + 1] = 0;*/
 
-  blocks.erase(blockPos);
+  if(normalizedBlockPos.x == 0) voxelGrid[0][normalizedBlockPos.y][normalizedBlockPos.z + 1] = 0;
+  if(normalizedBlockPos.x == Chunks::size - 1) voxelGrid[Chunks::size + 1][normalizedBlockPos.y][normalizedBlockPos.z + 1] = 0;
+  if(normalizedBlockPos.z == 0) voxelGrid[normalizedBlockPos.x + 1][normalizedBlockPos.y][0] = 0;
+  if(normalizedBlockPos.x == Chunks::size - 1) voxelGrid[normalizedBlockPos.x + 1][normalizedBlockPos.y][Chunks::size + 1] = 0;
+
   std::vector<int>faces = checkNeighbors(normalizedBlockPos.x + 1, normalizedBlockPos.y, normalizedBlockPos.z + 1);
   
-  if (faces.size() > 0) {
+  if (voxelGrid[normalizedBlockPos.x + 1][normalizedBlockPos.y][normalizedBlockPos.z + 1] == 1 && blocks.find(blockPos) != blocks.end() && faces.size() > 0) {
+    blockType bT = blocks[blockPos]->getBlockType();
+    blocks.erase(blockPos);
     blocks.emplace(blockPos, std::make_unique<Block>(blockPos.x, blockPos.y, blockPos.z));
     blocks[blockPos]->setType(bT);
     setFaces(blockPos, faces);
