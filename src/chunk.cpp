@@ -59,7 +59,7 @@ int Chunk::getNumBlocks(){
   return blocks.size();
 }
 
-void Chunk::deleteBlock(glm::ivec3 voxel, const siv::PerlinNoise &p) {
+void Chunk::deleteBlock(glm::ivec3 voxel, const siv::PerlinNoise &p, std::vector<Chunk*> adjChunks) {
   // Normalize voxel coordinates into chunk-local coordinates (0-15 range)
   glm::ivec3 normalizedBlockCoords(
       (voxel.x % Chunks::size + Chunks::size) % Chunks::size, // Handles negative modulo correctly
@@ -109,11 +109,17 @@ void Chunk::deleteBlock(glm::ivec3 voxel, const siv::PerlinNoise &p) {
           }
       } /*else {
           // Handle cases where the neighboring block is in an adjacent chunk
-          // This may involve notifying the chunk manager or updating neighboring chunks
-          Chunk* adjacentChunk = chunkManager->getChunk(neighborPos); // Implement this function as needed
-          if (adjacentChunk) {
-              adjacentChunk->updateChunkOnBlockBreak(neighborPos);
+        glm::ivec2 neighborChunkCoords(
+          neighborPos.x >= 0 ? neighborPos.x / Chunks::size : (neighborPos.x - Chunks::size + 1) / Chunks::size,
+          neighborPos.z >= 0 ? neighborPos.z / Chunks::size : (neighborPos.z - Chunks::size + 1) / Chunks::size
+        );
+
+        for( auto c : adjChunks){
+          if(c->xOffset == neighborChunkCoords.x && c->zOffset == neighborChunkCoords.y){
+            c->updateChunkOnBlockBreak(neighborPos);
+            break;
           }
+        }
       }*/
   }
 
@@ -121,6 +127,31 @@ void Chunk::deleteBlock(glm::ivec3 voxel, const siv::PerlinNoise &p) {
   updateVertices();
 }
 
+void Chunk::updateChunkOnBlockBreak(const glm::ivec3 blockPos){
+  const glm::ivec3 normalizedBlockPos(
+    (blockPos.x % Chunks::size + Chunks::size) % Chunks::size, // Handles negative modulo correctly
+    blockPos.y,
+    (blockPos.z % Chunks::size + Chunks::size) % Chunks::size  // Handles negative modulo correctly
+  );
+
+  //update chunks voxelGrid with new deleted Block
+  if(normalizedBlockPos.x == 0) voxelGrid[0][normalizedBlockPos.y][normalizedBlockPos.z + 1] = 0;
+  if(normalizedBlockPos.x == Chunks::size - 1) voxelGrid[Chunks::size + 1][normalizedBlockPos.y][normalizedBlockPos.z] = 0;
+  if(normalizedBlockPos.z == 0) voxelGrid[normalizedBlockPos.x][normalizedBlockPos.y][0] = 0;
+  if(normalizedBlockPos.x == Chunks::size - 1) voxelGrid[normalizedBlockPos.x][normalizedBlockPos.y][Chunks::size + 1] = 0;
+  blockType bT = blocks[blockPos]->getBlockType();
+
+  blocks.erase(blockPos);
+  std::vector<int>faces = checkNeighbors(normalizedBlockPos.x + 1, normalizedBlockPos.y, normalizedBlockPos.z + 1);
+  
+  if (faces.size() > 0) {
+    blocks.emplace(blockPos, std::make_unique<Block>(blockPos.x, blockPos.y, blockPos.z));
+    blocks[blockPos]->setType(bT);
+    setFaces(blockPos, faces);
+  }
+
+  updateVertices();
+}
 
 //will need to modify to remove face between blocks next to and current block being places
 void Chunk::placeBlock(const glm::ivec3 voxel){

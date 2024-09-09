@@ -32,6 +32,10 @@ class Block{
       this->type = block;
     }
 
+    blockType getBlockType(){
+      return type;
+    }
+
     int getBlockId(){
       return type;
     }

@@ -1,5 +1,4 @@
 #include "chunkManager.h"
-#include <float.h>
 
 chunkManager::chunkManager(){
   for(int i = -Render::renderDistance; i < Render::renderDistance; i++){
@@ -20,7 +19,16 @@ void chunkManager::deleteBlock(glm::ivec3 voxel){
     blockCoords.z >= 0 ? blockCoords.z / Chunks::size : (blockCoords.z - Chunks::size + 1) / Chunks::size
   );
   blockManager.erase(blockCoords);
-  chunks[chunkCoords]->deleteBlock(voxel, p);
+
+  //since worlds are (supposed) to be infinite we can assume these always exist.
+  std::vector<Chunk*> adjChunks;
+  adjChunks.push_back(chunks[glm::ivec2(chunkCoords.x + 1, chunkCoords.y)].get());
+  adjChunks.push_back(chunks[glm::ivec2(chunkCoords.x - 1, chunkCoords.y)].get());
+  adjChunks.push_back(chunks[glm::ivec2(chunkCoords.x, chunkCoords.y + 1)].get());
+  adjChunks.push_back(chunks[glm::ivec2(chunkCoords.x, chunkCoords.y - 1)].get());
+
+  chunks[chunkCoords]->deleteBlock(voxel, p, adjChunks);
+
   //NOTE !!!!!!
   //This needs to be changed - only for testing purposes now
   //there is no need to clear the whole manager when only one chunks blocks change. BlockManager needs reworked 
