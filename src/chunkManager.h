@@ -47,7 +47,7 @@ class chunkManager{
     void placeBlock(glm::ivec3 voxel);
     std::pair<float*, int> fetchBlockFromChunk(glm::ivec3 blockCoords);
     std::unique_ptr<Chunk> fetchChunk(glm::ivec2 chunkCoords);
-    glm::vec3 mouseVoxel(Raycast &ray, Camera &camera);
+    std::pair<glm::vec3, glm::vec3> mouseVoxel(Raycast &ray, Camera &camera);
     void drawChunks();
   private:
     const siv::PerlinNoise p;

@@ -103,7 +103,7 @@ while (!glfwWindowShouldClose(window)) {
     glm::mat4 view = camera.GetViewMatrix();
     glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (Screen::width / Screen::height), 0.1f, 100.0f);
 
-    glm::ivec3 voxel = chunkManager.mouseVoxel(ray, camera);
+    auto voxel = chunkManager.mouseVoxel(ray, camera);
     ray.update(camera.GetViewMatrix(), camera.getProjMatrix());
     glm::vec3 cameraWorldPos = camera.getCameraWorldPosition();
     
@@ -123,7 +123,7 @@ while (!glfwWindowShouldClose(window)) {
     glStencilMask(0xFF); 
     chunkManager.drawChunks();
 
-    auto data = chunkManager.fetchBlockFromChunk(voxel);
+    auto data = chunkManager.fetchBlockFromChunk(voxel.first);
     if(data.second > 0){
       outlineShader.use();
       //this means that we found a block and now need to send its information to our outline shader.      
@@ -172,13 +172,13 @@ while (!glfwWindowShouldClose(window)) {
         double elapsedTime = std::chrono::duration<double>(currentTime - lastBreakTime).count();
 
         if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_1) == GLFW_PRESS && !mouseButtonPressed && elapsedTime >= cooldownDuration) {
-            chunkManager.deleteBlock(voxel);
+            chunkManager.deleteBlock(voxel.first);
             mouseButtonPressed = true;
             lastBreakTime = currentTime;
         }
 
         if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_2) == GLFW_PRESS && !mouseButtonPressed && elapsedTime >= cooldownDuration) {
-            chunkManager.placeBlock(voxel);
+            chunkManager.placeBlock(voxel.second);
             mouseButtonPressed = true;
             lastBreakTime = currentTime;
         }
@@ -197,7 +197,7 @@ while (!glfwWindowShouldClose(window)) {
     font.RenderText("+", Screen::width/2.0f, Screen::height/2.0f, 0.5f, glm::vec3(1.0f, 1.0f, 1.0f));
     font.RenderText(std::to_string(cameraWorldPos.x) + ", " + std::to_string(cameraWorldPos.y) + ", " + std::to_string(cameraWorldPos.z), 10.0f, Screen::height - 50.0f, 0.5f, glm::vec3(1.0f, 1.0f, 1.0f));
     font.RenderText(std::to_string(ray.getCurrentRay().x) + ", " + std::to_string(ray.getCurrentRay().y) + ", " + std::to_string(ray.getCurrentRay().z), 10.0f, Screen::height - 80.0f, 0.5f, glm::vec3(1.0f, 1.0f, 1.0f));
-    font.RenderText(std::to_string(voxel.x) + ", " + std::to_string(voxel.y) + ", " + std::to_string(voxel.z), 10.0f, Screen::height - 110.0f, 0.5f, glm::vec3(1.0f, 1.0f, 1.0f));
+    font.RenderText(std::to_string(voxel.first.x) + ", " + std::to_string(voxel.first.y) + ", " + std::to_string(voxel.first.z), 10.0f, Screen::height - 110.0f, 0.5f, glm::vec3(1.0f, 1.0f, 1.0f));
     glEnable(GL_DEPTH_TEST);
 
 

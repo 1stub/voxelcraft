@@ -184,8 +184,8 @@ void Chunk::updateChunkOnBlockBreak(const glm::ivec3 blockPos, const glm::ivec3 
 }
 
 //will need to modify to remove face between blocks next to and current block being places
-void Chunk::placeBlock(const glm::ivec3 voxel){
-  glm::ivec3 newBlock(voxel.x, voxel.y + 1, voxel.z);
+void Chunk::placeBlock(const glm::ivec3 voxel){ 
+  glm::ivec3 newBlock(voxel.x, voxel.y, voxel.z);
   glm::ivec3 normalizedBlockCoords(
       (newBlock.x % Chunks::size + Chunks::size) % Chunks::size, // Handles negative modulo correctly
       newBlock.y,

@@ -45,7 +45,7 @@ void chunkManager::deleteBlock(glm::ivec3 voxel){
 }
 
 void chunkManager::placeBlock(glm::ivec3 voxel){
-  BlockCoord blockCoords = {voxel.x, voxel.y + 1, voxel.z};
+  BlockCoord blockCoords = {voxel.x, voxel.y, voxel.z};
   glm::ivec2 chunkCoords(
     blockCoords.x >= 0 ? blockCoords.x / Chunks::size : (blockCoords.x - Chunks::size + 1) / Chunks::size,
     blockCoords.z >= 0 ? blockCoords.z / Chunks::size : (blockCoords.z - Chunks::size + 1) / Chunks::size
@@ -96,7 +96,7 @@ float intbound(float s, float ds) {
 
 //https://gamedev.stackexchange.com/questions/72120/how-do-i-find-voxels-along-a-ray?noredirect=1&lq=1
 //based off this ^ - note, i wasnt able to sucessful modify this code but chat gpt was :)
-glm::vec3 chunkManager::mouseVoxel(Raycast &ray, Camera &camera) {
+std::pair<glm::vec3, glm::vec3> chunkManager::mouseVoxel(Raycast &ray, Camera &camera) { //actual block, adjacent based on face normal
   glm::vec3 rayWOR = ray.getCurrentRay();
 
   // Set the starting position and steps for the ray
@@ -118,8 +118,10 @@ glm::vec3 chunkManager::mouseVoxel(Raycast &ray, Camera &camera) {
   do {
       // Check if current voxel is solid
       if (blockExists(xPos, yPos, zPos)) {
+          std::cout << "Intersected face normal: (" << faceNormal.x << ", " << faceNormal.y << ", " << faceNormal.z << ")" << std::endl;
           std::cout << "Solid voxel hit at: (" << xPos << ", " << yPos << ", " << zPos << ")" << std::endl;
-          return glm::vec3(xPos, yPos, zPos);
+          glm::vec3 voxel(xPos, yPos, zPos);
+          return std::make_pair(voxel, voxel + faceNormal);
       }
 
       // Move to the next voxel based on tMax
@@ -149,7 +151,7 @@ glm::vec3 chunkManager::mouseVoxel(Raycast &ray, Camera &camera) {
           }
       }
   } while (true);
-  return glm::vec3(0,0,0); 
+  return std::make_pair(glm::vec3(0,0,0), glm::vec3(0,0,0)); 
 }
 
 void chunkManager::drawChunks(){
