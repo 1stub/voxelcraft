@@ -51,7 +51,7 @@ class Chunk{
     std::shared_ptr<Block> fetchBlock(glm::ivec3 blockCoords);
     void deleteBlock(glm::ivec3 voxel, const siv::PerlinNoise &p, std::vector<Chunk*> adjChunks);
     void updateChunkOnBlockBreak(const glm::ivec3 blockPos, const glm::ivec3 originalBlockPos, const glm::ivec2 originalChunkPos, const siv::PerlinNoise &p);
-    void placeBlock(const glm::ivec3 voxel);
+    void placeBlock(const glm::ivec3 voxel, blockType block);
     void drawChunk();
 
     std::unordered_map<glm::ivec3, std::shared_ptr<Block>, Comp_ivec3, Comp_ivec3> blocks; 
@@ -62,7 +62,7 @@ class Chunk{
     unsigned char voxelGrid[Chunks::size+2][Chunks::height][Chunks::size+2]; //+2 for padding
     unsigned int texture;
     float verticeCount = 0;
-    blockTexCoords blockTextures[4]; 
+    blockTexCoords blockTextures[16]; 
     
     //for siv::PerlinNoise
     int octaves = 8;

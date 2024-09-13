@@ -44,14 +44,14 @@ void chunkManager::deleteBlock(glm::ivec3 voxel){
   }
 }
 
-void chunkManager::placeBlock(glm::ivec3 voxel){
+void chunkManager::placeBlock(glm::ivec3 voxel, blockType bType){
   BlockCoord blockCoords = {voxel.x, voxel.y, voxel.z};
   glm::ivec2 chunkCoords(
     blockCoords.x >= 0 ? blockCoords.x / Chunks::size : (blockCoords.x - Chunks::size + 1) / Chunks::size,
     blockCoords.z >= 0 ? blockCoords.z / Chunks::size : (blockCoords.z - Chunks::size + 1) / Chunks::size
   );
   blockManager.insert(blockCoords);
-  chunks[chunkCoords]->placeBlock(voxel);
+  chunks[chunkCoords]->placeBlock(voxel, bType);
 }
 
 

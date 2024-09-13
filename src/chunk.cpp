@@ -184,7 +184,7 @@ void Chunk::updateChunkOnBlockBreak(const glm::ivec3 blockPos, const glm::ivec3 
 }
 
 //will need to modify to remove face between blocks next to and current block being places
-void Chunk::placeBlock(const glm::ivec3 voxel){ 
+void Chunk::placeBlock(const glm::ivec3 voxel, blockType block){ 
   glm::ivec3 newBlock(voxel.x, voxel.y, voxel.z);
   glm::ivec3 normalizedBlockCoords(
       (newBlock.x % Chunks::size + Chunks::size) % Chunks::size, // Handles negative modulo correctly
@@ -194,7 +194,7 @@ void Chunk::placeBlock(const glm::ivec3 voxel){
   voxelGrid[normalizedBlockCoords.x+1][normalizedBlockCoords.y][normalizedBlockCoords.z + 1] = 1;
   std::vector<int> faces = checkNeighbors(normalizedBlockCoords.x + 1, normalizedBlockCoords.y, normalizedBlockCoords.z + 1);
   blocks.emplace(newBlock, std::make_unique<Block>(newBlock.x, newBlock.y, newBlock.z));
-  blocks[newBlock]->setType(Stone);
+  blocks[newBlock]->setType(block);
   setFaces(newBlock, faces);
   updateVertices();
 }
@@ -269,20 +269,20 @@ void Chunk::textureBlocks() {
 
 //this generates our textures into an array - should probably be done in the chunkManager
 void Chunk::setBlockTexture(){
-  constexpr float y = 0;
   constexpr float sheetWidth = 64.0f;
   constexpr float sheetHeight = 64.0f;
   constexpr float spriteWidth = 16.0f , spriteHeight = 16.0f;
-  
-  for(float x = 0; x < 4; x++){
-    blockTextures[static_cast<int>(x)] = {
-      { (x * spriteWidth) / sheetWidth, (y * spriteHeight) / sheetHeight}, //topleft
-      { ((x + 1) * spriteWidth) / sheetWidth, (y * spriteHeight) / sheetHeight}, //top right
-      { ((x + 1) * spriteWidth) / sheetWidth, ((y + 1) * spriteHeight) / sheetHeight}, //bottomright
-      { ((x + 1) * spriteWidth) / sheetWidth, ((y + 1) * spriteHeight) / sheetHeight}, //bottom right
-      { (x * (spriteWidth)) / sheetWidth, ((y + 1) * spriteHeight) / sheetHeight}, //bottom left
-      { (x * spriteWidth) / sheetWidth, (y * spriteHeight) / sheetHeight} //topleft
-    };
+  for(float y = 0; y < 2; y++){
+    for(float x = 0; x < 4; x++){
+      blockTextures[static_cast<int>(x) + static_cast<int>(y * 4)] = {
+        { (x * spriteWidth) / sheetWidth, (y * spriteHeight) / sheetHeight}, //topleft
+        { ((x + 1) * spriteWidth) / sheetWidth, (y * spriteHeight) / sheetHeight}, //top right
+        { ((x + 1) * spriteWidth) / sheetWidth, ((y + 1) * spriteHeight) / sheetHeight}, //bottomright
+        { ((x + 1) * spriteWidth) / sheetWidth, ((y + 1) * spriteHeight) / sheetHeight}, //bottom right
+        { (x * (spriteWidth)) / sheetWidth, ((y + 1) * spriteHeight) / sheetHeight}, //bottom left
+        { (x * spriteWidth) / sheetWidth, (y * spriteHeight) / sheetHeight} //topleft
+      };
+    }
   }
 }
 

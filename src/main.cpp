@@ -47,14 +47,7 @@ int main(){
   Shader shader("../shaders/shader.vs", "../shaders/shader.fs");
   Shader outlineShader("../shaders/outline.vs", "../shaders/outline.fs");
 
-  //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-  glEnable(GL_DEPTH_TEST);
-  glEnable(GL_BLEND);
-  glDepthFunc(GL_LESS);
-  glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);  
-  //glEnable(GL_CULL_FACE);
-  //glCullFace(GL_BACK);
-  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  
+  //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);  
   glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED); //keeps mouse in game
 
   double prevTime = 0.0;
@@ -72,8 +65,13 @@ int main(){
   glGenVertexArrays(1, &b_VAO);
   glGenBuffers(1, &b_VBO);
   
+  static blockType blockTypeToPlace = Stone;
   //Our main game loop
 while (!glfwWindowShouldClose(window)) {
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_BLEND);
+    glDepthFunc(GL_LESS);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     // Get current time and calculate the time difference
     crntTime = glfwGetTime();
     timeDiff = crntTime - prevTime;
@@ -106,7 +104,7 @@ while (!glfwWindowShouldClose(window)) {
     auto voxel = chunkManager.mouseVoxel(ray, camera);
     ray.update(camera.GetViewMatrix(), camera.getProjMatrix());
     glm::vec3 cameraWorldPos = camera.getCameraWorldPosition();
-    
+  
     // Rendering commands
     shader.use();
 
@@ -121,9 +119,65 @@ while (!glfwWindowShouldClose(window)) {
    
     glStencilFunc(GL_ALWAYS, 1, 0xFF); 
     glStencilMask(0xFF); 
-    chunkManager.drawChunks();
+    chunkManager.drawChunks();    
+
+
+    // Initialize the cooldown period and the last block break time
+    static bool mouseButtonPressed = false;
+    static auto lastBreakTime = std::chrono::high_resolution_clock::now();
+    constexpr double cooldownDuration = 0.25; // Cooldown duration in seconds
 
     auto data = chunkManager.fetchBlockFromChunk(voxel.first);
+
+    if (data.second > 0) {
+        // Get the current time
+        auto currentTime = std::chrono::high_resolution_clock::now();
+        // Calculate the elapsed time since the last block break
+        double elapsedTime = std::chrono::duration<double>(currentTime - lastBreakTime).count();
+      
+        if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_1) == GLFW_PRESS && !mouseButtonPressed && elapsedTime >= cooldownDuration) {
+            chunkManager.deleteBlock(voxel.first);
+            mouseButtonPressed = true;
+            lastBreakTime = currentTime;
+        }
+        
+        if(glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS){
+          blockTypeToPlace = Stone;
+        }
+        else if(glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS){
+          blockTypeToPlace = Dirt;
+        }
+        else if(glfwGetKey(window, GLFW_KEY_3) == GLFW_PRESS){
+          blockTypeToPlace = WoodenPlank;
+        }
+        else if(glfwGetKey(window, GLFW_KEY_4) == GLFW_PRESS){
+          blockTypeToPlace = Leaf;
+        }
+
+
+        if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_2) == GLFW_PRESS && !mouseButtonPressed && elapsedTime >= cooldownDuration) {
+            chunkManager.placeBlock(voxel.second, blockTypeToPlace);
+            mouseButtonPressed = true;
+            lastBreakTime = currentTime;
+        }
+
+        if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_1) == GLFW_RELEASE) {
+            mouseButtonPressed = false;
+        }
+        if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_2) == GLFW_RELEASE) {
+            mouseButtonPressed = false;
+        }
+    }
+
+    //text rendering
+    glDisable(GL_DEPTH_TEST);
+    font.RenderText(FPS + " fps", 10.0f, Screen::height-20.0f, 0.5f, glm::vec3(1.0f, 1.0f, 1.0f));
+    font.RenderText("+", Screen::width/2.0f, Screen::height/2.0f, 0.5f, glm::vec3(1.0f, 1.0f, 1.0f));
+    font.RenderText(std::to_string(cameraWorldPos.x) + ", " + std::to_string(cameraWorldPos.y) + ", " + std::to_string(cameraWorldPos.z), 10.0f, Screen::height - 50.0f, 0.5f, glm::vec3(1.0f, 1.0f, 1.0f));
+    font.RenderText(std::to_string(ray.getCurrentRay().x) + ", " + std::to_string(ray.getCurrentRay().y) + ", " + std::to_string(ray.getCurrentRay().z), 10.0f, Screen::height - 80.0f, 0.5f, glm::vec3(1.0f, 1.0f, 1.0f));
+    font.RenderText(std::to_string(voxel.first.x) + ", " + std::to_string(voxel.first.y) + ", " + std::to_string(voxel.first.z), 10.0f, Screen::height - 110.0f, 0.5f, glm::vec3(1.0f, 1.0f, 1.0f));
+    glEnable(GL_DEPTH_TEST);
+
     if(data.second > 0){
       outlineShader.use();
       //this means that we found a block and now need to send its information to our outline shader.      
@@ -146,59 +200,20 @@ while (!glfwWindowShouldClose(window)) {
       glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
       glEnableVertexAttribArray(0);
       
-      glDisable(GL_CULL_FACE);
-      glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
-      glStencilMask(0x00); 
-      glDisable(GL_DEPTH_TEST);
-      glDrawArrays(GL_TRIANGLES, 0, data.second);
-      glStencilMask(0xFF);
-      glStencilFunc(GL_ALWAYS, 1, 0xFF);   
-      glEnable(GL_DEPTH_TEST); 
-      glEnable(GL_CULL_FACE);
+      // Depth mask and cull face adjustments
+      glDisable(GL_CULL_FACE);  // Disable culling to ensure transparency renders correctly
+      glStencilFunc(GL_NOTEQUAL, 1, 0xFF); // Only render where the stencil is not equal
+      glStencilMask(0x00);      // Don't write to the stencil buffer
+      glDisable(GL_DEPTH_TEST); // Disable depth test when drawing the transparent object
+      glDepthMask(GL_FALSE);    // Prevent depth writes
+      glDrawArrays(GL_TRIANGLES, 0, data.second); // Draw highlighted block
+      glDepthMask(GL_TRUE);     // Re-enable depth writes
+      glStencilMask(0xFF);      // Reset stencil mask
+      glStencilFunc(GL_ALWAYS, 1, 0xFF); // Reset stencil function
+      glEnable(GL_DEPTH_TEST);  // Re-enable depth testing
+      glEnable(GL_CULL_FACE);   // Re-enable face culling
       glBindVertexArray(0);
     }
-    
-
-
-    // Initialize the cooldown period and the last block break time
-    static bool mouseButtonPressed = false;
-    static auto lastBreakTime = std::chrono::high_resolution_clock::now();
-    constexpr double cooldownDuration = 0.25; // Cooldown duration in seconds
-
-    if (data.second > 0) {
-        // Get the current time
-        auto currentTime = std::chrono::high_resolution_clock::now();
-        // Calculate the elapsed time since the last block break
-        double elapsedTime = std::chrono::duration<double>(currentTime - lastBreakTime).count();
-
-        if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_1) == GLFW_PRESS && !mouseButtonPressed && elapsedTime >= cooldownDuration) {
-            chunkManager.deleteBlock(voxel.first);
-            mouseButtonPressed = true;
-            lastBreakTime = currentTime;
-        }
-
-        if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_2) == GLFW_PRESS && !mouseButtonPressed && elapsedTime >= cooldownDuration) {
-            chunkManager.placeBlock(voxel.second);
-            mouseButtonPressed = true;
-            lastBreakTime = currentTime;
-        }
-
-        if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_1) == GLFW_RELEASE) {
-            mouseButtonPressed = false;
-        }
-        if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_2) == GLFW_RELEASE) {
-            mouseButtonPressed = false;
-        }
-    }
-
-    //text rendering
-    glDisable(GL_DEPTH_TEST);
-    font.RenderText(FPS + " fps", 10.0f, Screen::height-20.0f, 0.5f, glm::vec3(1.0f, 1.0f, 1.0f));
-    font.RenderText("+", Screen::width/2.0f, Screen::height/2.0f, 0.5f, glm::vec3(1.0f, 1.0f, 1.0f));
-    font.RenderText(std::to_string(cameraWorldPos.x) + ", " + std::to_string(cameraWorldPos.y) + ", " + std::to_string(cameraWorldPos.z), 10.0f, Screen::height - 50.0f, 0.5f, glm::vec3(1.0f, 1.0f, 1.0f));
-    font.RenderText(std::to_string(ray.getCurrentRay().x) + ", " + std::to_string(ray.getCurrentRay().y) + ", " + std::to_string(ray.getCurrentRay().z), 10.0f, Screen::height - 80.0f, 0.5f, glm::vec3(1.0f, 1.0f, 1.0f));
-    font.RenderText(std::to_string(voxel.first.x) + ", " + std::to_string(voxel.first.y) + ", " + std::to_string(voxel.first.z), 10.0f, Screen::height - 110.0f, 0.5f, glm::vec3(1.0f, 1.0f, 1.0f));
-    glEnable(GL_DEPTH_TEST);
 
 
     // Swap buffers and poll events

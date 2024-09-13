@@ -8,6 +8,10 @@ enum blockType{
   GrassTop = 1,
   Dirt = 2,
   Stone = 3,
+  Wood = 4,
+  WoodTop = 5,
+  WoodenPlank = 6,
+  Leaf = 7
 };
 
 class Block{
