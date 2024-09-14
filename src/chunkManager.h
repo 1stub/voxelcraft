@@ -32,7 +32,7 @@ namespace std {
             size_t h1 = std::hash<int>{}(coord.x);
             size_t h2 = std::hash<int>{}(coord.y);
             size_t h3 = std::hash<int>{}(coord.z);
-            return h1 ^ (h2 << 1) ^ (h3 << 2); // Combine hash values
+            return h1 ^ (h2 << 1) ^ (h3 << 1); // Combine hash values
         }
     };
 }
@@ -40,6 +40,9 @@ namespace std {
 class chunkManager{
   public:
     chunkManager();
+    void update(glm::vec3 playerPosition);
+    void removeChunkFromActive(const glm::ivec2& chunkPos);
+    void addChunk(const glm::ivec2& chunkPos, int i, int j, const glm::vec3& p);
     void initChunks();
     glm::vec3 checkRayAllChunks(Raycast &ray, Camera &camera);
     bool blockExists(int x, int y, int z) const;
@@ -52,6 +55,7 @@ class chunkManager{
   private:
     const siv::PerlinNoise p;
     std::unordered_map<glm::ivec2, std::unique_ptr<Chunk>, Comp_ivec2, Comp_ivec2> chunks;
+    std::unordered_map<glm::ivec2, std::unique_ptr<Chunk>, Comp_ivec2, Comp_ivec2> chunkCache;
     std::unordered_set<BlockCoord> blockManager; //just to check if a block exists
 };
 

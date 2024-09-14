@@ -1,4 +1,5 @@
 #include "chunkManager.h"
+#include "globals.h"
 
 chunkManager::chunkManager(){
   for(int i = -Render::renderDistance; i < Render::renderDistance; i++){
@@ -7,6 +8,24 @@ chunkManager::chunkManager(){
       chunks.emplace(chunkPos, std::make_unique<Chunk>(i, j, p));
       for(auto &b : chunks[chunkPos]->getBlocks()){
         blockManager.insert({b.x, b.y, b.z});
+      }
+    }
+  }
+  drawChunks();
+}
+void chunkManager::update(glm::vec3 playerPosition){
+  glm::ivec2 chunkCoords(
+    playerPosition.x >= 0 ? playerPosition.x / Chunks::size : (playerPosition.x - Chunks::size + 1) / Chunks::size,
+    playerPosition.z >= 0 ? playerPosition.z / Chunks::size : (playerPosition.z - Chunks::size + 1) / Chunks::size
+  );
+  for(int i = chunkCoords.x - Render::renderDistance; i < chunkCoords.x + Render::renderDistance; i++){
+    for(int j = chunkCoords.y - Render::renderDistance; j < chunkCoords.y + Render::renderDistance; j++){
+      glm::ivec2 chunkPos(i,j);
+      if(chunks.find(chunkPos) == chunks.end()){
+      chunks.emplace(chunkPos, std::make_unique<Chunk>(i, j, p));
+      for(auto &b : chunks[chunkPos]->getBlocks()){
+        blockManager.insert({b.x, b.y, b.z});
+      }
       }
     }
   }

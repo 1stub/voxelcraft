@@ -4,6 +4,7 @@
 #include <GLFW/glfw3.h>
 #include <glm/ext/matrix_transform.hpp>
 #include <string>
+#include <thread>
 
 #include "globals.h"
 #include "font.h"
@@ -67,6 +68,7 @@ int main(){
   
   static blockType blockTypeToPlace = Stone;
   static std::string blockType = "Stone";
+
   //Our main game loop
 while (!glfwWindowShouldClose(window)) {
     glEnable(GL_DEPTH_TEST);
@@ -74,6 +76,10 @@ while (!glfwWindowShouldClose(window)) {
     glDepthFunc(GL_LESS);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     // Get current time and calculate the time difference
+    
+    //std::thread genThread(&chunkManager::update, &chunkManager, camera.getCameraWorldPosition());
+    //genThread.join();
+    chunkManager.update(camera.getCameraWorldPosition());
     crntTime = glfwGetTime();
     timeDiff = crntTime - prevTime;
     prevTime = crntTime;
@@ -119,9 +125,8 @@ while (!glfwWindowShouldClose(window)) {
     glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
    
     glStencilFunc(GL_ALWAYS, 1, 0xFF); 
-    glStencilMask(0xFF); 
+    glStencilMask(0xFF);  
     chunkManager.drawChunks();    
-
 
     // Initialize the cooldown period and the last block break time
     static bool mouseButtonPressed = false;
@@ -225,6 +230,7 @@ while (!glfwWindowShouldClose(window)) {
     // Swap buffers and poll events
     glfwSwapBuffers(window);
     glfwPollEvents();
+
 }
   glfwTerminate();
   return 0;
