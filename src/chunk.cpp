@@ -17,8 +17,9 @@ Chunk::Chunk(int xOff, int zOff, const siv::PerlinNoise &p) : xOffset(xOff), zOf
           //our block position
           glm::ivec3 bPos((xOffset * Chunks::size) + x, y, (zOffset * Chunks::size) + z);
           
+          blockType empty = Empty;
           //stores a vector containing integers corresponding to face to draw
-          std::vector<int>faces = checkNeighbors(x + 1, y, z + 1);
+          std::vector<int>faces = checkNeighbors(x + 1, y, z + 1, empty);
           
           if (faces.size() > 0) {
             blocks.emplace(bPos, std::make_unique<Block>(bPos.x, bPos.y, bPos.z));
@@ -97,7 +98,8 @@ void Chunk::deleteBlock(glm::ivec3 voxel, const siv::PerlinNoise &p, std::vector
               int iNoiseVal = noiseValue < 0.0 ? glm::ceil(noiseValue) : glm::floor(noiseValue);
               int height = iNoiseVal + Chunks::size;
 
-              std::vector<int> faces = checkNeighbors(normalizedNeighborPos.x + 1, normalizedNeighborPos.y, normalizedNeighborPos.z + 1);
+              blockType empty = Empty;
+              std::vector<int> faces = checkNeighbors(normalizedNeighborPos.x + 1, normalizedNeighborPos.y, normalizedNeighborPos.z + 1, empty);
 
               // If the neighbor block does not exist and new faces are needed, create a new block
               if (blocks.find(neighborPos) == blocks.end() && !faces.empty()) {
@@ -159,7 +161,8 @@ void Chunk::updateChunkOnBlockBreak(const glm::ivec3 blockPos, const glm::ivec3 
   if(this->zOffset > originalChunkPos.y) voxelGrid[normalizedOriginalBlockPos.x + 1][normalizedOriginalBlockPos.y][0] = 0;
   if(this->zOffset < originalChunkPos.y) voxelGrid[normalizedOriginalBlockPos.x + 1][normalizedOriginalBlockPos.y][Chunks::size + 1] = 0;*/
 
-  std::vector<int>faces = checkNeighbors(normalizedBlockPos.x + 1, normalizedBlockPos.y, normalizedBlockPos.z + 1);
+  blockType empty = Empty;
+  std::vector<int>faces = checkNeighbors(normalizedBlockPos.x + 1, normalizedBlockPos.y, normalizedBlockPos.z + 1, empty);
 
 
   if (voxelGrid[normalizedBlockPos.x + 1][normalizedBlockPos.y][normalizedBlockPos.z + 1] == 1  && faces.size() > 0) {
@@ -184,18 +187,34 @@ void Chunk::updateChunkOnBlockBreak(const glm::ivec3 blockPos, const glm::ivec3 
 }
 
 //will need to modify to remove face between blocks next to and current block being places
-void Chunk::placeBlock(const glm::ivec3 voxel, blockType block){ 
+void Chunk::placeBlock(const glm::ivec3 voxel, blockType block, std::vector<Chunk *> adjChunks){ 
   glm::ivec3 newBlock(voxel.x, voxel.y, voxel.z);
   glm::ivec3 normalizedBlockCoords(
       (newBlock.x % Chunks::size + Chunks::size) % Chunks::size, // Handles negative modulo correctly
       newBlock.y,
       (newBlock.z % Chunks::size + Chunks::size) % Chunks::size  // Handles negative modulo correctly
   );
+  
+  //check adjacent blocks and update faces if a leaf is placed, turned out to be more complicated than needed. will probably just stay broken, not too committed on getting this working
+  /*if(block == Leaf){
+  }*/
+
+  //make 1 again, was zero if we had a leaf
   voxelGrid[normalizedBlockCoords.x+1][normalizedBlockCoords.y][normalizedBlockCoords.z + 1] = 1;
-  std::vector<int> faces = checkNeighbors(normalizedBlockCoords.x + 1, normalizedBlockCoords.y, normalizedBlockCoords.z + 1);
+  std::vector<int> faces = checkNeighbors(normalizedBlockCoords.x + 1, normalizedBlockCoords.y, normalizedBlockCoords.z + 1, block);
   blocks.emplace(newBlock, std::make_unique<Block>(newBlock.x, newBlock.y, newBlock.z));
   blocks[newBlock]->setType(block);
   setFaces(newBlock, faces);
+  updateVertices();
+}
+
+//used if we need to add a face to a block adjacent to a transparent one
+void Chunk::updateNeighborFaces(const glm::ivec3 blockPos, const glm::ivec3 normalizedBlockPos){
+  if(voxelGrid[normalizedBlockPos.x + 1][normalizedBlockPos.y][normalizedBlockPos.z + 1] == 1){
+    blockType neighborType = blocks[blockPos]->getBlockType();
+    std::vector<int> faces = checkNeighbors(normalizedBlockPos.x + 1, normalizedBlockPos.y, normalizedBlockPos.z + 1, neighborType);
+    setFaces(blockPos, faces);
+  }
   updateVertices();
 }
 
@@ -311,7 +330,7 @@ void Chunk::updateVertices() {
 
 //This checks to see what faces are visible
 //Will eventually need to use the voxelGrid for this
-std::vector<int> Chunk::checkNeighbors(int x, int y, int z){
+std::vector<int> Chunk::checkNeighbors(int x, int y, int z, blockType block){
     std::vector<int> faces;
     // Helper lambda to check if the block is air (or not solid)
     auto isAir = [&](int x, int y, int z) -> bool {
@@ -330,32 +349,32 @@ std::vector<int> Chunk::checkNeighbors(int x, int y, int z){
     //Behind = 5
 
     // Above
-    if (isAir(x, y + 1, z)) {
+    if (isAir(x, y + 1, z) || block == Leaf) {
         faces.push_back(0);
     }
 
     // Below
-    if (isAir(x, y - 1, z)) {
+    if (isAir(x, y - 1, z) || block == Leaf) {
         faces.push_back(1);
     }
 
     // Right
-    if (isAir(x + 1, y, z)) {
+    if (isAir(x + 1, y, z)|| block == Leaf) {
         faces.push_back(2);
     }
 
     // Left
-    if (isAir(x - 1, y, z)) {
+    if (isAir(x - 1, y, z)|| block == Leaf) {
         faces.push_back(3);
     }
 
     // Front
-    if (isAir(x, y, z - 1)) {
+    if (isAir(x, y, z - 1)|| block == Leaf) {
         faces.push_back(4);
     }
 
     // Behind
-    if (isAir(x, y, z + 1)) {
+    if (isAir(x, y, z + 1)|| block == Leaf) {
         faces.push_back(5);    
     }
     return faces;

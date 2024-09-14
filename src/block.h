@@ -4,6 +4,7 @@
 #include <vector>
 
 enum blockType{
+  Empty = -1, //just to be used when we dont know what block
   Grass = 0,
   GrassTop = 1,
   Dirt = 2,

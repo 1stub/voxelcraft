@@ -50,8 +50,14 @@ void chunkManager::placeBlock(glm::ivec3 voxel, blockType bType){
     blockCoords.x >= 0 ? blockCoords.x / Chunks::size : (blockCoords.x - Chunks::size + 1) / Chunks::size,
     blockCoords.z >= 0 ? blockCoords.z / Chunks::size : (blockCoords.z - Chunks::size + 1) / Chunks::size
   );
+  std::vector<Chunk*> adjChunks;
+  adjChunks.push_back(chunks[glm::ivec2(chunkCoords.x + 1, chunkCoords.y)].get());
+  adjChunks.push_back(chunks[glm::ivec2(chunkCoords.x - 1, chunkCoords.y)].get());
+  adjChunks.push_back(chunks[glm::ivec2(chunkCoords.x, chunkCoords.y + 1)].get());
+  adjChunks.push_back(chunks[glm::ivec2(chunkCoords.x, chunkCoords.y - 1)].get());
+
   blockManager.insert(blockCoords);
-  chunks[chunkCoords]->placeBlock(voxel, bType);
+  chunks[chunkCoords]->placeBlock(voxel, bType, adjChunks);
 }
 
 

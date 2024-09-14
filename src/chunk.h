@@ -41,7 +41,7 @@ class Chunk{
     void updateVertices();
     void textureBlocks();
     void setBlockTexture();
-    std::vector<int> checkNeighbors(int x, int y, int z);
+    std::vector<int> checkNeighbors(int x, int y, int z, blockType block);
     void setFaces(glm::ivec3 bPos, std::vector<int> faces);
     void generateHeightMap(const siv::PerlinNoise &p);
     std::vector<glm::ivec3> getBlocks();
@@ -51,7 +51,8 @@ class Chunk{
     std::shared_ptr<Block> fetchBlock(glm::ivec3 blockCoords);
     void deleteBlock(glm::ivec3 voxel, const siv::PerlinNoise &p, std::vector<Chunk*> adjChunks);
     void updateChunkOnBlockBreak(const glm::ivec3 blockPos, const glm::ivec3 originalBlockPos, const glm::ivec2 originalChunkPos, const siv::PerlinNoise &p);
-    void placeBlock(const glm::ivec3 voxel, blockType block);
+    void placeBlock(const glm::ivec3 voxel, blockType block, std::vector<Chunk *> adjChunks);
+    void updateNeighborFaces(const glm::ivec3 blockPos, const glm::ivec3 normalizedBlockPos);
     void drawChunk();
 
     std::unordered_map<glm::ivec3, std::shared_ptr<Block>, Comp_ivec3, Comp_ivec3> blocks; 

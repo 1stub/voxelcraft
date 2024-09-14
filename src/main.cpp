@@ -66,6 +66,7 @@ int main(){
   glGenBuffers(1, &b_VBO);
   
   static blockType blockTypeToPlace = Stone;
+  static std::string blockType = "Stone";
   //Our main game loop
 while (!glfwWindowShouldClose(window)) {
     glEnable(GL_DEPTH_TEST);
@@ -143,17 +144,22 @@ while (!glfwWindowShouldClose(window)) {
         
         if(glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS){
           blockTypeToPlace = Stone;
+          blockType = "Stone";
         }
         else if(glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS){
           blockTypeToPlace = Dirt;
+          blockType = "Dirt";
         }
         else if(glfwGetKey(window, GLFW_KEY_3) == GLFW_PRESS){
           blockTypeToPlace = WoodenPlank;
+          blockType = "Wooden Plank";
         }
         else if(glfwGetKey(window, GLFW_KEY_4) == GLFW_PRESS){
           blockTypeToPlace = Leaf;
+          blockType = "Leaf";
         }
 
+        font.RenderText(blockType, Screen::width / 2.0f, Screen::height-(Screen::height-20.0f), 0.5f, glm::vec3(1.0f, 1.0f, 1.0f));
 
         if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_2) == GLFW_PRESS && !mouseButtonPressed && elapsedTime >= cooldownDuration) {
             chunkManager.placeBlock(voxel.second, blockTypeToPlace);
