@@ -18,17 +18,43 @@ void chunkManager::update(glm::vec3 playerPosition){
     playerPosition.x >= 0 ? playerPosition.x / Chunks::size : (playerPosition.x - Chunks::size + 1) / Chunks::size,
     playerPosition.z >= 0 ? playerPosition.z / Chunks::size : (playerPosition.z - Chunks::size + 1) / Chunks::size
   );
+  std::unordered_set<glm::ivec2, Comp_ivec2> activeChunks;
   for(int i = chunkCoords.x - Render::renderDistance; i < chunkCoords.x + Render::renderDistance; i++){
     for(int j = chunkCoords.y - Render::renderDistance; j < chunkCoords.y + Render::renderDistance; j++){
-      glm::ivec2 chunkPos(i,j);
-      if(chunks.find(chunkPos) == chunks.end()){
-      chunks.emplace(chunkPos, std::make_unique<Chunk>(i, j, p));
-      for(auto &b : chunks[chunkPos]->getBlocks()){
-        blockManager.insert({b.x, b.y, b.z});
-      }
+        glm::ivec2 chunkPos(i,j);
+        activeChunks.insert(chunkPos);
+        if(chunks.find(chunkPos) == chunks.end()){
+        chunks.emplace(chunkPos, std::make_unique<Chunk>(i, j, p));
+        for(auto &b : chunks[chunkPos]->getBlocks()){
+          blockManager.insert({b.x, b.y, b.z});
+        }
       }
     }
   }
+
+  std::vector<glm::ivec2> chunksToMove; //cant delete iterator while iterating lol
+  for(auto &c : chunks){
+    if(activeChunks.find(c.first) == activeChunks.end()){ //chunk out of render distance, needs to be cached
+      chunksToMove.push_back(c.first);
+    }
+  }
+  for(const auto &chunkPos : chunksToMove){
+      auto it = chunks.find(chunkPos);
+      if(it != chunks.end() && chunkCache.find(chunkPos) == chunkCache.end()){
+        chunkCache[chunkPos] = std::move(it->second);
+        chunks.erase(it);
+      }
+  }
+
+  std::cout << chunkCache.size() << std::endl;
+}
+
+void chunkManager::removeChunkFromActive(const glm::ivec2& chunkPos){
+  
+}
+    
+void chunkManager::addChunk(const glm::ivec2& chunkPos, int i, int j, const glm::vec3& p){
+
 }
 
 void chunkManager::deleteBlock(glm::ivec3 voxel){
@@ -52,14 +78,8 @@ void chunkManager::deleteBlock(glm::ivec3 voxel){
   //This needs to be changed - only for testing purposes now
   //there is no need to clear the whole manager when only one chunks blocks change. BlockManager needs reworked 
   //for the sake of updating blocks on both placement and deletion
-  blockManager.clear();
-  for(int i = -Render::renderDistance; i < Render::renderDistance; i++){
-    for(int j = -Render::renderDistance; j < Render::renderDistance; j++){
-      glm::ivec2 chunkPos(i,j);
-      for(auto &b : chunks[chunkPos]->getBlocks()){
-        blockManager.insert({b.x, b.y, b.z});
-      }
-    }
+  for (auto &b : chunks[chunkCoords]->getBlocks()) {
+    blockManager.insert({b.x, b.y, b.z});
   }
 }
 
@@ -90,17 +110,22 @@ std::pair<float*, int> chunkManager::fetchBlockFromChunk(glm::ivec3 blockCoords)
         blockCoords.x >= 0 ? blockCoords.x / Chunks::size : (blockCoords.x - Chunks::size + 1) / Chunks::size,
         blockCoords.z >= 0 ? blockCoords.z / Chunks::size : (blockCoords.z - Chunks::size + 1) / Chunks::size
     );
-    auto blockIt = chunks[chunkCoords]->blocks.find(blockCoords);
 
-    if (blockIt != chunks[chunkCoords]->blocks.end() && blockIt->second) {
-        std::cout << "Block found at coordinates: " << blockCoords.x << ", " << blockCoords.y << ", " << blockCoords.z << std::endl;
-        return {blockIt->second->vertices.data(), blockIt->second->vertices.size()};
-    } else {
-        std::vector<float> ret;
-        std::cerr << "Chunk not found at coordinates: " << chunkCoords.x << ", " << chunkCoords.y << std::endl;
-        std::cerr << "Block not found at coordinates: " << blockCoords.x << ", " << blockCoords.y << ", " << blockCoords.z << std::endl;
-        return {ret.data(), 0};// return an empty vector or handle the error as needed
+    // Find the chunk
+    auto chunkIt = chunks.find(chunkCoords);
+    if (chunkIt != chunks.end()) {
+        // Access the chunk and block
+        auto& chunk = chunkIt->second;
+        auto blockIt = chunk->blocks.find(blockCoords);
+        
+        if (blockIt != chunk->blocks.end() && blockIt->second) {
+            // Return block vertices and size
+            return {blockIt->second->vertices.data(), static_cast<int>(blockIt->second->vertices.size())};
+        }
     }
+
+    // Return an empty result if not found
+    return {nullptr, 0};
 }
 
 //https://github.com/rhysboer/VoxitCraft/blob/master/Minecraft/Raycast.cpp

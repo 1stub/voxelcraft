@@ -16,26 +16,24 @@ struct BlockCoord {
 };
 
 struct Comp_ivec2 {
-  size_t operator()(const glm::ivec2& vec) const {
-    return std::hash<int>()(vec.x) ^ (std::hash<int>()(vec.y) << 1);
+  std::size_t operator()(const glm::ivec2& v) const {
+      return std::hash<int>()(v.x) ^ (std::hash<int>()(v.y) << 1);
   }
   bool operator()(const glm::ivec2& a, const glm::ivec2& b) const {
     return a.x == b.x && a.y == b.y;
   }
 };
 
-//is this efficient? maybe? does it work? yes
-namespace std {
-    template <>
-    struct hash<BlockCoord> {
-        size_t operator()(const BlockCoord& coord) const {
-            size_t h1 = std::hash<int>{}(coord.x);
-            size_t h2 = std::hash<int>{}(coord.y);
-            size_t h3 = std::hash<int>{}(coord.z);
-            return h1 ^ (h2 << 1) ^ (h3 << 1); // Combine hash values
-        }
-    };
-}
+
+struct BlockCoordHash {
+    std::size_t operator()(const BlockCoord& bc) const {
+        std::size_t h1 = std::hash<int>()(bc.x);
+        std::size_t h2 = std::hash<int>()(bc.y);
+        std::size_t h3 = std::hash<int>()(bc.z);
+        // Better mixing function
+        return h1 ^ (h2 << 1) ^ (h3 << 2);
+    }
+};
 
 class chunkManager{
   public:
@@ -56,7 +54,7 @@ class chunkManager{
     const siv::PerlinNoise p;
     std::unordered_map<glm::ivec2, std::unique_ptr<Chunk>, Comp_ivec2, Comp_ivec2> chunks;
     std::unordered_map<glm::ivec2, std::unique_ptr<Chunk>, Comp_ivec2, Comp_ivec2> chunkCache;
-    std::unordered_set<BlockCoord> blockManager; //just to check if a block exists
+    std::unordered_set<BlockCoord, BlockCoordHash> blockManager; //just to check if a block exists
 };
 
 #endif

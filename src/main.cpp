@@ -71,36 +71,14 @@ int main(){
 
   //Our main game loop
 while (!glfwWindowShouldClose(window)) {
+    // Clear the screen
+    glClearColor(0.4745f, 0.651f, 1.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
     glDepthFunc(GL_LESS);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     // Get current time and calculate the time difference
-    
-    //std::thread genThread(&chunkManager::update, &chunkManager, camera.getCameraWorldPosition());
-    //genThread.join();
-    chunkManager.update(camera.getCameraWorldPosition());
-    crntTime = glfwGetTime();
-    timeDiff = crntTime - prevTime;
-    prevTime = crntTime;
-
-    // Update frame count and FPS calculation
-    frameCount++;
-    fpsUpdateTime += timeDiff;
-
-    if (fpsUpdateTime >= 1.0f) { // Update FPS every second
-        FPS = std::to_string(frameCount); // Integer FPS
-        frameCount = 0;
-        fpsUpdateTime = 0.0f;
-    }
-    
-    // Clear the screen
-    glClearColor(0.4745f, 0.651f, 1.0f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    // Update dt and process input
-    processInput(window, static_cast<float>(timeDiff));
-    
 
     glm::mat4 model = glm::mat4(1.0f);
     model = glm::rotate(model, glm::radians(0.0f), glm::vec3(1.0f, 1.0f, 1.0f)); 
@@ -108,10 +86,6 @@ while (!glfwWindowShouldClose(window)) {
     glm::mat4 view = camera.GetViewMatrix();
     glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (Screen::width / Screen::height), 0.1f, 100.0f);
 
-    auto voxel = chunkManager.mouseVoxel(ray, camera);
-    ray.update(camera.GetViewMatrix(), camera.getProjMatrix());
-    glm::vec3 cameraWorldPos = camera.getCameraWorldPosition();
-  
     // Rendering commands
     shader.use();
 
@@ -127,6 +101,28 @@ while (!glfwWindowShouldClose(window)) {
     glStencilFunc(GL_ALWAYS, 1, 0xFF); 
     glStencilMask(0xFF);  
     chunkManager.drawChunks();    
+    //std::thread genThread(&chunkManager::update, &chunkManager, camera.getCameraWorldPosition());
+    chunkManager.update(camera.getCameraWorldPosition());
+    crntTime = glfwGetTime();
+    timeDiff = crntTime - prevTime;
+    prevTime = crntTime;
+
+    // Update frame count and FPS calculation
+    frameCount++;
+    fpsUpdateTime += timeDiff;
+
+    if (fpsUpdateTime >= 1.0f) { // Update FPS every second
+        FPS = std::to_string(frameCount); // Integer FPS
+        frameCount = 0;
+        fpsUpdateTime = 0.0f;
+    }
+
+    // Update dt and process input
+    processInput(window, static_cast<float>(timeDiff));
+
+    auto voxel = chunkManager.mouseVoxel(ray, camera);
+    ray.update(camera.GetViewMatrix(), camera.getProjMatrix());
+    glm::vec3 cameraWorldPos = camera.getCameraWorldPosition();
 
     // Initialize the cooldown period and the last block break time
     static bool mouseButtonPressed = false;
@@ -135,7 +131,7 @@ while (!glfwWindowShouldClose(window)) {
 
     auto data = chunkManager.fetchBlockFromChunk(voxel.first);
 
-    if (data.second > 0) {
+    if (data.second) {
         // Get the current time
         auto currentTime = std::chrono::high_resolution_clock::now();
         // Calculate the elapsed time since the last block break
@@ -230,7 +226,8 @@ while (!glfwWindowShouldClose(window)) {
     // Swap buffers and poll events
     glfwSwapBuffers(window);
     glfwPollEvents();
-
+  
+    //genThread.join();
 }
   glfwTerminate();
   return 0;
