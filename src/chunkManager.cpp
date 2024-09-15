@@ -23,10 +23,18 @@ void chunkManager::update(glm::vec3 playerPosition){
     for(int j = chunkCoords.y - Render::renderDistance; j < chunkCoords.y + Render::renderDistance; j++){
         glm::ivec2 chunkPos(i,j);
         activeChunks.insert(chunkPos);
+        if(chunkCache.find(chunkPos) != chunkCache.end()){
+          auto it = chunkCache.find(chunkPos); 
+          if(it != chunkCache.end()){
+            chunks[it->first] = std::move(it->second);
+            chunkCache.erase(it);
+          }
+        }else{
         if(chunks.find(chunkPos) == chunks.end()){
-        chunks.emplace(chunkPos, std::make_unique<Chunk>(i, j, p));
-        for(auto &b : chunks[chunkPos]->getBlocks()){
-          blockManager.insert({b.x, b.y, b.z});
+          chunks.emplace(chunkPos, std::make_unique<Chunk>(i, j, p));
+          for(auto &b : chunks[chunkPos]->getBlocks()){
+            blockManager.insert({b.x, b.y, b.z});
+          }
         }
       }
     }

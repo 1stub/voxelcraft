@@ -5,6 +5,7 @@
 #include <glm/ext/matrix_transform.hpp>
 #include <string>
 #include <thread>
+#include <mutex>
 
 #include "globals.h"
 #include "font.h"
@@ -68,7 +69,7 @@ int main(){
   
   static blockType blockTypeToPlace = Stone;
   static std::string blockType = "Stone";
-
+  std::mutex updateMutex;
   //Our main game loop
 while (!glfwWindowShouldClose(window)) {
     // Clear the screen
@@ -100,9 +101,10 @@ while (!glfwWindowShouldClose(window)) {
    
     glStencilFunc(GL_ALWAYS, 1, 0xFF); 
     glStencilMask(0xFF);  
-    chunkManager.drawChunks();    
-    //std::thread genThread(&chunkManager::update, &chunkManager, camera.getCameraWorldPosition());
+
     chunkManager.update(camera.getCameraWorldPosition());
+    //
+    chunkManager.drawChunks();    
     crntTime = glfwGetTime();
     timeDiff = crntTime - prevTime;
     prevTime = crntTime;
@@ -225,9 +227,7 @@ while (!glfwWindowShouldClose(window)) {
 
     // Swap buffers and poll events
     glfwSwapBuffers(window);
-    glfwPollEvents();
-  
-    //genThread.join();
+    glfwPollEvents();  
 }
   glfwTerminate();
   return 0;
